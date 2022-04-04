@@ -17,13 +17,6 @@
       "description": "Based on the last commit message, creates a rush change file rspecting conventional commits specification.",
       "autoinstallerName": "rush-changemanager",
       "shellCommand": "node common/scripts/rush-changefiles.js"
-    },
-    {
-      "name": "package-spfx",
-      "commandKind": "bulk",
-      "summary": "Creates SPFx packages.",
-      "description": "Creates SPFx packages by running package-solution command.",
-      "enableParallelism": true
     }
   ],
   "parameters": [
@@ -35,15 +28,6 @@
       "associatedCommands": [
         "commitlint"
       ]
-    },
-    {
-      "parameterKind": "flag",
-      "longName": "--dev",
-      "description": "Enforces revision version in config/package-solution.json; for use in Dev deployments",
-      "associatedCommands": [
-        "package-spfx"
-      ]
     }
-    
   ]
 }
