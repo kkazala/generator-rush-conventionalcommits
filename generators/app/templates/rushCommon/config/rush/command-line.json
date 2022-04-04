@@ -1,0 +1,49 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/rush/v5/command-line.schema.json",
+  "commands": [
+    {
+      "name": "commitlint",
+      "commandKind": "global",
+      "summary": "Runs commitlint on the commit messages.",
+      "description": "Used by the commit-msg Git hook. This command invokes commitlint to ensure that the commit messages meet the conventional commit format",
+      "safeForSimultaneousRushProcesses": true,
+      "autoinstallerName": "rush-commitlint",
+      "shellCommand": "commitlint"
+    },
+    {
+      "name": "changefiles",
+      "commandKind": "global",
+      "summary": "Creates a rush change file.",
+      "description": "Based on the last commit message, creates a rush change file rspecting conventional commits specification.",
+      "autoinstallerName": "rush-changemanager",
+      "shellCommand": "node common/scripts/rush-changefiles.js"
+    },
+    {
+      "name": "package-spfx",
+      "commandKind": "bulk",
+      "summary": "Creates SPFx packages.",
+      "description": "Creates SPFx packages by running package-solution command.",
+      "enableParallelism": true
+    }
+  ],
+  "parameters": [
+    {
+      "parameterKind": "string",
+      "argumentName": "MESSAGE",
+      "longName": "--edit",
+      "description": "",
+      "associatedCommands": [
+        "commitlint"
+      ]
+    },
+    {
+      "parameterKind": "flag",
+      "longName": "--dev",
+      "description": "Enforces revision version in config/package-solution.json; for use in Dev deployments",
+      "associatedCommands": [
+        "package-spfx"
+      ]
+    }
+    
+  ]
+}

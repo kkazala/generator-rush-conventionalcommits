@@ -1,0 +1,14 @@
+{
+    "name": "generator-rush-conventionalcommits",
+    "version": "0.1.0",
+    "description": "Provisions rush commands to generate changelog files based on commit message, using conventional commit specification.",
+    "files": [
+        "generators"
+    ],
+    "keywords": [
+        "yeoman-generator"
+    ],
+    "dependencies": {
+        "yeoman-generator": "^5.6.1"
+    }
+}
