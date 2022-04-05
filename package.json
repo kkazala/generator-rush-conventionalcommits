@@ -1,12 +1,24 @@
 {
     "name": "generator-rush-conventionalcommits",
-    "version": "0.1.0",
+    "version": "1.0.0",
+    "homepage":"https://github.com/kkazala/generator-rush-conventionalcommits",
+    "license": "MIT",
+    "author": {
+        "name": "Kinga Kazala",
+        "url": "https://dev.to/kkazala"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/kkazala/generator-rush-conventionalcommits"
+    },
     "description": "Provisions rush commands to generate changelog files based on commit message, using conventional commit specification.",
     "files": [
         "generators"
     ],
     "keywords": [
-        "yeoman-generator"
+        "yeoman-generator", 
+        "rush",
+        "conventional-commits"
     ],
     "dependencies": {
         "yeoman-generator": "^5.6.1"
