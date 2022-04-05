@@ -46,7 +46,6 @@ module.exports = class extends Generator {
             `${this.sourceRoot()}/commitlint.config.js`,
             `${this.contextRoot}/commitlint.config.js`
         );
-
     }
 
     _executeCommand(command) {
