@@ -1,4 +1,5 @@
 const fs = require('fs');
+const compareVersions = require('compare-versions');
 const { Buffer } = require('buffer');
 
 
@@ -9,6 +10,15 @@ class Util {
         var commentEval = new RegExp(/\/\*[\s\S]*?\*\/|([^:]|^)\/\/.*$/gm);
         return data.replace(commentEval, '');
     }
+    _assertRushVersion(filePath) { 
+        const rushJson = JSON.parse(
+                this._stripJSONComments(
+                    fs.readFileSync(filePath, 'utf-8')
+            ));
+        //is 5.64 or newer?
+        return ( compareVersions(rushJson.rushVersion, "5.66.2") >=0) ;
+    }
+
     _mergeJsonFiles(sourceFile, targetFile, mergingLogic) {
         
         this._ensureFileExists(sourceFile);

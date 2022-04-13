@@ -1,17 +1,20 @@
 # generator-rush-conventionalcommits
 
+[![rush](https://img.shields.io/badge/rush-5.66.2-brightgreen)](https://rushjs.io/)
+[![yeoman generator](https://img.shields.io/badge/yeoman--generator-5.6.1-brightgreen)](https://yeoman.io/generators/)
+
 Add changelog generation based on [conventional commits](https://conventionalcommits.org/) convention to your rush monorepos.
 See the [Rush and Conventional Commits Series](https://dev.to/kkazala/series/17133) for detailed description.
 
+>Important: This solution is using [ProjectChangeAnalyzer](https://api.rushstack.io/pages/rush-lib.projectchangeanalyzer/) class which is still in BETA and may change. It is NOT recommended to use this API in a production environment.
+
 ## Prerequisites
 
-This generator requires that your project is managed with rush.
+This generator requires that your project is managed with [rush](https://rushjs.io/pages/maintainer/setup_new_repo).
 Run the following commands to initialize it:
 
 - `rush init`
 - `rush update`
-
-See [Setting up a new repo](https://rushjs.io/pages/maintainer/setup_new_repo/)
 
 ## Installation
 
@@ -74,3 +77,29 @@ Types `fix:`, `feat:` or `BREAKING CHANGE:` will cause generation of a new chang
 - `git commit -m "fix: testing rush change file generation"`
 - observe the information printed to the terminal. The first time a rush command depending on an autoinstaller is executed, rush will install Rush engine, package manager, dependencies defined in the autoinstaller. The next time, the command will execute much faster.
 - ensure that a new {branchName}_{timestamp}.json file has been created in the common/changes/project-name folder.
+
+## Older version of rush?
+
+This generator requires **rush 5.66.2**.
+If you are using older version, and are not yet ready to upgrade, you may "downgrade" this solution.
+
+### rush v5.64.0
+
+Update the **common\autoinstallers\rush-changemanager\package.json** file. Change:
+
+```json
+    "@microsoft/rush-lib": "^5.66.2",
+    "@rushstack/node-core-library": "^3.45.2",
+```
+
+to:
+
+```json
+    "@microsoft/rush-lib": "^5.64.0",
+    "@rushstack/node-core-library": "^3.45.0",
+```
+
+### rush v5.63.1 or older
+
+Rush **5.64.0** introduces `--quiet` command for suppressing startup information.
+Apart from updating **common\autoinstallers\rush-changemanager\package.json** to reference correct version of rush modules, update the `git hooks` to remove the `--quiet` flag.

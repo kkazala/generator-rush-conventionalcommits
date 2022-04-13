@@ -1,9 +1,9 @@
-// Prompt core configuration
-const prompting = require('./promptConfig');
-const util = require('../app/utils.js');
-const child_process = require('child_process');
 var Generator = require('yeoman-generator');
+const child_process = require('child_process');
 const fs = require('fs');
+const chalk = require('chalk');
+const prompting = require('./promptConfig');
+const utils = require('../app/utils.js');
 
 module.exports = class extends Generator {
     _copyRushConfig() {
@@ -15,10 +15,10 @@ module.exports = class extends Generator {
         );
 
         this.log("Copying rush commands");
-        util._mergeJsonFiles(
+        utils._mergeJsonFiles(
             `${this.sourceRoot()}/rushCommon/config/rush/command-line.json`,
             `${this.contextRoot}/common/config/rush/command-line.json`,
-            util._mergeCommands
+            utils._mergeCommands
         );
 
         this.log("Copying rush autoinstallers");
@@ -56,14 +56,18 @@ module.exports = class extends Generator {
     }
 
     initializing() {
-        const rushJson= `${this.contextRoot}/rush.json`
-        if (this.fs.exists(rushJson)) { 
-            if (!fs.existsSync(`${this.contextRoot}/common/temp/`)) { 
-                this.log("Please invoke 'rush install' before running this generator")
-                process.exit(1)
-            }
-        } else { 
-            this.log("This generator needs to be invoked from rush root directory")
+        
+        const rushJson = `${this.contextRoot}/rush.json`
+        if (!this.fs.exists(rushJson)) {
+            this.log(chalk.red('This generator needs to be invoked from rush root directory')); 
+            process.exit(1)
+        }
+        if (!utils._assertRushVersion(rushJson)) { 
+            this.log(chalk.red('This generator rush version 5.66.2 or newer. Please either upgrade rush, or use older version of the generator.'));
+            process.exit(1)
+        }
+        if (!fs.existsSync(`${this.contextRoot}/common/temp/`)) {
+            this.log(chalk.blue("Please invoke 'rush install' before running this generator"));
             process.exit(1)
         }
     } 
