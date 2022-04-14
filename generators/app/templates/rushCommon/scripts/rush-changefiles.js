@@ -1,35 +1,23 @@
 const child_process = require('child_process');
 const path = require('path');
 const fs = require('fs');
+const utils = require('./rush.utils');
+
 const node_modules = path.join(__dirname, '..', 'autoinstallers/rush-changemanager/node_modules');
 const rushLib = require(path.join(node_modules, '@microsoft/rush-lib'));
 const rushCore = require(path.join(node_modules, '@rushstack/node-core-library'));
 const gitlog = require(path.join(node_modules, 'gitlog')).default;
 const recommendedBump = require(path.join(node_modules, 'recommended-bump'));
 
-const Colors = {
-    Red: '\u001B[31m',
-    Purple: '\u001B[35m',
-    Green: '\u001B[32m',
-    Yellow: '\u001B[33m',
-    Reset: '\u001B[0m'
-};
+function getCurrentBranch(defaultRemote) {
 
-function executeCommand(command) {
-    //stdio: 'inherit': process will use the parent's stdin, stdout and stderr streams
-    return child_process.execSync(command, { stdio: 'inherit' });
-}
-function executeCommandAsync(command) {
-    //stdio: 'inherit': process will use the parent's stdin, stdout and stderr streams
-    return child_process.exec(command, { stdio: 'inherit' });
-}
-function getCurrentBranch() {
-    const currBranch = child_process.execSync("git branch --show-current").toString().trim();
     try {
+        const currBranch = child_process.execSync("git branch --show-current").toString().trim();
         return child_process.execSync(`git rev-parse --symbolic-full-name --abbrev-ref "${currBranch}@{u}"`).toString().trim();
-    } catch (error) {
-        console.log(Colors.Red + "Error fetching git remote branch features/versions. Detected changed files may be incorrect."+Colors.Reset)      
-        console.log(Colors.Yellow + `Execute 'git push --set-upstream ${defaultRemote} ${currBranch}' or 'git checkout --track ${defaultRemote}/${currBranch}' to set upstream branch` + Colors.Reset);
+    }
+    catch (error) {
+        console.log(utils.Colors.Red + "Error fetching git remote branch features/versions. Detected changed files may be incorrect."+utils.Colors.Reset)      
+        console.log(utils.Colors.Yellow + `Execute 'git push --set-upstream ${defaultRemote} ${currBranch}' or 'git checkout --track ${defaultRemote}/${currBranch}' to set upstream branch` + utils.Colors.Reset);
         return null;
     }
 }
@@ -56,16 +44,24 @@ function parseRecentCommits(projectName, projectPath, lastCommitInfo, repoPath, 
 
     const commits = gitlog({repo: repoPath,file: projectPath,number: 2,fields:["subject", "body", "rawBody", "authorEmail", "hash"]});
     //if the last two messages are the same, skip change file generation
-    const commitMsgPass = (commits.length == 2 && commits[0].rawBody != commits[1].rawBody || commits.length == 1) && commits[0].body!= defaultCommitMessage;
+    const commitMsgPass = (commits.length == 2 && commits[0].rawBody != commits[1].rawBody || commits.length == 1) && commits[0].body != defaultCommitMessage;
+    const projectInCommit = lastCommitInfo.hash == commits[0].hash;
 
-    //The project was included in the last commit
-    if (lastCommitInfo.hash == commits[0].hash && commitMsgPass) {
-        return Object.assign(lastCommitInfo, {
-             projectName: projectName,
-        });
+    //The project was included in the last commit & commit msg changed
+    if (commitMsgPass && projectInCommit) {
+        return {
+            ...lastCommitInfo,
+            projectName: projectName,
+        };
     }
     //no changes for this project were included in the last commit, or the last 2 commits identical
-    else { 
+    else {
+        if (!commitMsgPass) {
+            console.log(utils.Colors.Gray + "The last two commit messages are the same, skipping change file generation" + utils.Colors.Reset)
+        }
+        if (!projectInCommit) {
+            console.log(utils.Colors.Gray + `Project ${projectName} is not included in the current commit` + utils.Colors.Reset)
+        }
         return false;
     }
 }
@@ -76,18 +72,33 @@ async function getChangedProjectNamesAsync(rushConfiguration) {
 
     try {
         const currentBranch = getCurrentBranch(rushConfiguration.repositoryDefaultRemote);
+        console.log(utils.Colors.Green + `Checking for updates to ${currentBranch}` + utils.Colors.Reset);
+        
         if (currentBranch) {
             const changedProjects = await projectAnalyzer.getChangedProjectsAsync({
-                targetBranchName: getCurrentBranch(), //rushConfiguration.repositoryDefaultFullyQualifiedRemoteBranch,
+                targetBranchName: currentBranch, 
                 terminal: terminal,
                 enableFiltering: false,
-                shouldFetch: true,
                 includeExternalDependencies: false
             });
 
             changedProjects.forEach(project => {
-                rushProjects.set(project.packageName, project.projectFolder);
+                
+                //projects within the Rush configuration which declare this project as a dependency. 
+                let consumingProjects = new Map()
+                project.consumingProjects.forEach(project => {
+                    consumingProjects.set(project.packageName, project.projectFolder);
+                });
+
+                //a list of projects that have changed in the current state of the repo when compared to the specified branch.
+                rushProjects.set(project.packageName,
+                    {
+                        'projectFolder': project.projectFolder,
+                        'consumingProjects': consumingProjects
+                    }
+                );
             });
+            console.log(utils.Colors.Green + `Found changes in ${rushProjects.size} project(s)` + utils.Colors.Reset);
         }
         return rushProjects;
 
@@ -96,12 +107,28 @@ async function getChangedProjectNamesAsync(rushConfiguration) {
         return rushProjects;
     }
 }
-function generateChangeFile(rushConfig, res) {
-    let changeFilePath = rushLib.ChangeManager.createEmptyChangeFiles(rushConfig, res.projectName, res.emailAddress);
+function createChangeFile(rushConfig, bumpInfo) {
+    let changeFilePath = rushLib.ChangeManager.createEmptyChangeFiles(rushConfig, bumpInfo.projectName, bumpInfo.emailAddress);
     const file = require(changeFilePath);
-    file.changes[0].comment = res.lastMessage;
-    file.changes[0].type = res.increment;
+    file.changes[0].comment = bumpInfo.lastMessage;
+    file.changes[0].type = bumpInfo.increment;
     fs.writeFileSync(changeFilePath, JSON.stringify(file, null,2));
+}
+
+function generateChangeFiles(rushConfig, bumpInfo, projectInfo) {
+
+    console.log(utils.Colors.Green + `Generating change file for "${bumpInfo.increment}": "${bumpInfo.subject}" for project ${bumpInfo.projectName}` + utils.Colors.Reset);
+    createChangeFile(rushConfig, bumpInfo);
+    //create change files for consuming projects
+    let patchInfo = { ...bumpInfo }
+    patchInfo.increment = "patch"
+    patchInfo.subject= `[dependency] ${bumpInfo.subject}`
+
+    projectInfo.consumingProjects.forEach((value, key) => {
+        patchInfo.projectName = key
+        console.log(utils.Colors.Green + `Generating change file for "${patchInfo.increment}": "${patchInfo.subject}" for project ${patchInfo.projectName}` + utils.Colors.Reset);
+        createChangeFile(rushConfig, patchInfo);
+    })
 }
 
 function generateChangeFilesFromCommit() {
@@ -111,24 +138,31 @@ function generateChangeFilesFromCommit() {
 
     if (lastCommitInfo) {
         //get changed projects managed by rush
-        getChangedProjectNamesAsync(rushConfiguration).then((rushProjects) => {
-            rushProjects.forEach((value, key) => {
-                //parse last 2 commits: was last commit for the project the last hash?
-                const result = parseRecentCommits(key, value, lastCommitInfo, rushConfiguration.rushJsonFolder, rushConfiguration.gitChangeLogUpdateCommitMessage);
+        getChangedProjectNamesAsync(rushConfiguration).then((changedProjects) => {
+            let fileAdded = false;
+            console.log(changedProjects)
 
+            changedProjects.forEach((value, key) => {
+                //parse last 2 commits: was last commit for the project the last hash?
+                const result = parseRecentCommits(key, value.projectFolder, lastCommitInfo, rushConfiguration.rushJsonFolder, rushConfiguration.gitChangeLogUpdateCommitMessage);
                 if (result) {
-                    console.log(Colors.Green + `Generating change file for "${result.increment}": "${result.subject}" for project ${result.projectName}` + Colors.Reset);
-                    generateChangeFile(rushConfiguration, result);
-                    console.log(Colors.Green + "Automatically adding change files" + Colors.Reset);
-                    executeCommand(`git add ${rushConfiguration.changesFolder}`);
-                    console.log(Colors.Green + `Commiting change files with message: "${rushConfiguration.gitChangeLogUpdateCommitMessage}"` + Colors.Reset);
-                    executeCommandAsync(`git commit --no-edit --no-verify --amend `);
-                    console.log(Colors.Green + "All done!" + Colors.Reset);
+                    generateChangeFiles(rushConfiguration, result, value);
+                    fileAdded = true;
                 }
                 else {
-                    console.log(Colors.Yellow + `Change file not required for project ${key}.` + Colors.Reset);
+                    console.log(utils.Colors.Yellow + `Change file not required for project ${key}.` + utils.Colors.Reset);
                 }
             });
+            if (fileAdded) {
+
+                console.log(utils.Colors.Green + "Automatically adding change files" + utils.Colors.Reset);
+                utils.executeCommand(`git add ${rushConfiguration.changesFolder}`);
+
+                console.log(utils.Colors.Green + `Commiting change files with 'git commit --no-edit --no-verify --amend'` + utils.Colors.Reset);
+                utils.executeCommandAsync(`git commit --no-edit --no-verify --amend `);
+
+                console.log(utils.Colors.Green + "All done!" + utils.Colors.Reset);
+            }
         });
     }
     else { 

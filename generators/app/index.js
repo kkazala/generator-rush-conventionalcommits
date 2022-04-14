@@ -56,7 +56,9 @@ module.exports = class extends Generator {
     }
 
     initializing() {
-        
+
+        this.log(chalk.green("rush-conventionalcommits " +this.rootGeneratorVersion()))
+       
         const rushJson = `${this.contextRoot}/rush.json`
         if (!this.fs.exists(rushJson)) {
             this.log(chalk.red('This generator needs to be invoked from rush root directory')); 

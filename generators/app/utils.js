@@ -15,7 +15,6 @@ class Util {
                 this._stripJSONComments(
                     fs.readFileSync(filePath, 'utf-8')
             ));
-        //is 5.64 or newer?
         return ( compareVersions(rushJson.rushVersion, "5.66.2") >=0) ;
     }
 
