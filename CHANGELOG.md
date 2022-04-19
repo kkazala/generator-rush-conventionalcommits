@@ -1,5 +1,9 @@
 # Change Log - generator-rush-conventionalcommits
 
+## 1.2.1
+
+fix: reference to the correct autoinstaller in rush.changefiles.utils.js
+
 ## 1.2.0
 
 ### Change file generation

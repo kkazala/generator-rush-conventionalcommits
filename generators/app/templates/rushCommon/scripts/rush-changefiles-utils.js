@@ -1,8 +1,9 @@
 const child_process = require('child_process');
 const fs = require('fs');
 const path = require('path');
-const node_modules = path.join(__dirname, '..', 'autoinstallers/rush-utils/node_modules');
+const node_modules = path.join(__dirname, '..', 'autoinstallers/rush-changemanager/node_modules');
 const rushLib = require(path.join(node_modules, '@microsoft/rush-lib'));
+const rushCore = require(path.join(node_modules, '@rushstack/node-core-library'));
 
 class Util {
 
@@ -31,27 +32,6 @@ class Util {
         //stdio: 'inherit': process will use the parent's stdin, stdout and stderr streams
         return child_process.exec(command, { stdio: 'inherit' });
     }
-    getRushConfig() { 
-        return rushLib.RushConfiguration.loadFromDefaultLocation({ startingFolder: process.cwd() });
-    }
-    getRushProjects(verPolicy) { 
-        //it is necessary to reload the rushConfiguration after project versions are updated
-        const rushConfiguration = rushLib.RushConfiguration.loadFromDefaultLocation({ startingFolder: process.cwd() });
-        if (verPolicy === undefined) {
-            return rushConfiguration.projects;
-        }
-        else { 
-            return rushConfiguration.projects.filter(elem => elem.versionPolicyName == verPolicy);
-        }
-    }
-    getScriptsFolder() { 
-        const rushConfiguration = rushLib.RushConfiguration.loadFromDefaultLocation({ startingFolder: process.cwd() });
-        return rushConfiguration.commonScriptsFolder;
-    }
-    getChangesFolder() { 
-        const rushConfiguration = rushLib.RushConfiguration.loadFromDefaultLocation({ startingFolder: process.cwd() });
-        return rushConfiguration.changesFolder;  
-    }
     getCurrentBranch() {
         const rushConfiguration = rushLib.RushConfiguration.loadFromDefaultLocation({ startingFolder: process.cwd() });
         const defaultRemote = rushConfiguration.repositoryDefaultRemote;
@@ -64,15 +44,18 @@ class Util {
             return null;
         }
     }
-    get whatChangedPath() { 
-        const targetDir = path.join(this.getScriptsFolder(), "temp");
-        if (!fs.existsSync(targetDir)) { 
-            fs.mkdir(targetDir, (err) => { 
-                console.log(this.Colors.Red + err.message +this.Colors.Reset)      
-            });
-        }
-        return path.join(targetDir, "whatChanged.json");
+    async getChangedProjectsAsync(currentBranch) {
+        const rushConfiguration = rushLib.RushConfiguration.loadFromDefaultLocation({ startingFolder: process.cwd() });
+        const projectAnalyzer = new rushLib.ProjectChangeAnalyzer(rushConfiguration);
+        const terminal = new rushCore.Terminal(new rushCore.ConsoleTerminalProvider({ verboseEnabled: false }));
+
+         const changedProjects = await projectAnalyzer.getChangedProjectsAsync({
+                targetBranchName: currentBranch, 
+                terminal: terminal,
+                enableFiltering: false,
+                includeExternalDependencies: false
+         });
+        return changedProjects;
     }
-    
 }
 module.exports = new Util();

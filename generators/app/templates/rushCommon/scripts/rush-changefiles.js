@@ -1,26 +1,12 @@
-const child_process = require('child_process');
 const path = require('path');
 const fs = require('fs');
-const utils = require('./rush.utils');
+const utils = require('./rush-changefiles-utils.js');
 
 const node_modules = path.join(__dirname, '..', 'autoinstallers/rush-changemanager/node_modules');
 const rushLib = require(path.join(node_modules, '@microsoft/rush-lib'));
-const rushCore = require(path.join(node_modules, '@rushstack/node-core-library'));
 const gitlog = require(path.join(node_modules, 'gitlog')).default;
 const recommendedBump = require(path.join(node_modules, 'recommended-bump'));
 
-function getCurrentBranch(defaultRemote) {
-
-    try {
-        const currBranch = child_process.execSync("git branch --show-current").toString().trim();
-        return child_process.execSync(`git rev-parse --symbolic-full-name --abbrev-ref "${currBranch}@{u}"`).toString().trim();
-    }
-    catch (error) {
-        console.log(utils.Colors.Red + "Error fetching git remote branch features/versions. Detected changed files may be incorrect."+utils.Colors.Reset)      
-        console.log(utils.Colors.Yellow + `Execute 'git push --set-upstream ${defaultRemote} ${currBranch}' or 'git checkout --track ${defaultRemote}/${currBranch}' to set upstream branch` + utils.Colors.Reset);
-        return null;
-    }
-}
 function parseLastCommit(repoPath) {
     const lastCommit = gitlog({ repo: repoPath, file: repoPath, number: 1, fields: ["subject", "body", "rawBody", "authorEmail", "hash"] });
     //fix, feat or BREAKING?
@@ -65,25 +51,19 @@ function parseRecentCommits(projectName, projectPath, lastCommitInfo, repoPath, 
         return false;
     }
 }
+
 async function getChangedProjectNamesAsync(rushConfiguration) {
-    const projectAnalyzer = new rushLib.ProjectChangeAnalyzer(rushConfiguration);
-    const terminal = new rushCore.Terminal(new rushCore.ConsoleTerminalProvider({ verboseEnabled: false }));
+
     let rushProjects = new Map()
 
     try {
-        const currentBranch = getCurrentBranch(rushConfiguration.repositoryDefaultRemote);
+        const currentBranch = utils.getCurrentBranch();
         console.log(utils.Colors.Green + `Checking for updates to ${currentBranch}` + utils.Colors.Reset);
         
         if (currentBranch) {
-            const changedProjects = await projectAnalyzer.getChangedProjectsAsync({
-                targetBranchName: currentBranch, 
-                terminal: terminal,
-                enableFiltering: false,
-                includeExternalDependencies: false
-            });
+            const changedProjects = await utils.getChangedProjectsAsync(currentBranch);
 
             changedProjects.forEach(project => {
-                
                 //projects within the Rush configuration which declare this project as a dependency. 
                 let consumingProjects = new Map()
                 project.consumingProjects.forEach(project => {
