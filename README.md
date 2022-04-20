@@ -49,7 +49,6 @@ This generator creates the following resources:
 
 - **rush-commitlint**: rush autoinstaller installing `@commitlint/cli` and `@commitlint/config-conventional`
 - **rush-changemanager**: rush autoinstaller installing `@microsoft/rush-lib`, `@rushstack/node-core-library`, `gitlog` and `recommended-bump`
-- **rush-utils**: rush autoinstaller installing  `@microsoft/rush-lib` and `yargs`
 
 ### custom commands
 
