@@ -6,54 +6,6 @@ const prompting = require('./promptConfig');
 const utils = require('../app/utils.js');
 
 module.exports = class extends Generator {
-    _copyRushConfig() {
-
-        this.log("Copying rush scripts");
-        this.fs.copy(
-            `${this.sourceRoot()}/rushCommon/scripts/.`,
-            `${this.contextRoot}/common/scripts/.`,
-        );
-
-        this.log("Copying rush commands");
-        utils._mergeJsonFiles(
-            `${this.sourceRoot()}/rushCommon/config/rush/command-line.json`,
-            `${this.contextRoot}/common/config/rush/command-line.json`,
-            utils._mergeCommands
-        );
-
-        this.log("Copying rush autoinstallers");
-        this.fs.copy(
-            `${this.sourceRoot()}/rushCommon/autoinstallers/.`,
-            `${this.contextRoot}/common/autoinstallers/.`
-        );        
-
-        this.log("Copying rush githooks");
-        this.fs.copy(
-            `${this.sourceRoot()}/rushCommon/git-hooks`,
-            `${this.contextRoot}/common/git-hooks`
-        );
-        
-        if (this.answers.githook_prepush) {
-            this.log("Copying rush githooks");
-            this.fs.copy(
-                `${this.sourceRoot()}/rushCommon/git-hooks-optional/pre-push`,
-                `${this.contextRoot}/common/git-hooks/pre-push`
-            );
-        }
-        
-        this.log("Copying commitlint.config");
-        this.fs.copy(
-            `${this.sourceRoot()}/commitlint.config.js`,
-            `${this.contextRoot}/commitlint.config.js`
-        );
-    }
-
-    _executeCommand(command) {
-        return child_process.execSync(command, { stdio: 'inherit' });
-    }
-    _executeCommandAsync(command) {
-        return child_process.exec(command, { stdio: 'inherit' });
-    }
 
     initializing() {
 
@@ -65,7 +17,7 @@ module.exports = class extends Generator {
             process.exit(1)
         }
         if (!utils._assertRushVersion(rushJson)) { 
-            this.log(chalk.red('This generator rush version 5.66.2 or newer. Please either upgrade rush, or use older version of the generator.'));
+            this.log(chalk.red(`This generator requires rush version ${utils.rushVersionRequired} or newer. Please either upgrade rush, or use older version of the generator.`));
             process.exit(1)
         }
         if (!fs.existsSync(`${this.contextRoot}/common/temp/`)) {
@@ -85,6 +37,8 @@ module.exports = class extends Generator {
     }
 
     install() {
+        this.log(chalk.green("Updating auto-installers"));
+
         this._executeCommand('rush update-autoinstaller --name rush-commitlint');
         this._executeCommand('rush update-autoinstaller --name rush-changemanager');
         this._executeCommand('rush update');
@@ -93,4 +47,53 @@ module.exports = class extends Generator {
     end() {
 
     }
+    _copyRushConfig() {
+
+        this.log(chalk.green("Copying rush scripts"));
+        this.fs.copy(
+            `${this.sourceRoot()}/rushCommon/scripts/.`,
+            `${this.contextRoot}/common/scripts/.`,
+        );
+
+        this.log(chalk.green("Copying rush commands"));
+        utils._mergeJsonFiles(
+            `${this.sourceRoot()}/rushCommon/config/rush/command-line.json`,
+            `${this.contextRoot}/common/config/rush/command-line.json`,
+            utils._mergeCommands
+        );
+
+        this.log(chalk.green("Copying rush autoinstallers"));
+        this.fs.copy(
+            `${this.sourceRoot()}/rushCommon/autoinstallers/.`,
+            `${this.contextRoot}/common/autoinstallers/.`
+        );        
+
+        this.log(chalk.green("Copying rush githooks"));
+        this.fs.copy(
+            `${this.sourceRoot()}/rushCommon/git-hooks`,
+            `${this.contextRoot}/common/git-hooks`
+        );
+        
+        if (this.answers.githook_prepush) {
+            this.log(chalk.green("Copying rush githooks"));
+            this.fs.copy(
+                `${this.sourceRoot()}/rushCommon/git-hooks-optional/pre-push`,
+                `${this.contextRoot}/common/git-hooks/pre-push`
+            );
+        }
+        
+        this.log(chalk.green("Copying commitlint.config"));
+        this.fs.copy(
+            `${this.sourceRoot()}/commitlint.config.js`,
+            `${this.contextRoot}/commitlint.config.js`
+        );
+    }
+
+    _executeCommand(command) {
+        return child_process.execSync(command, { stdio: 'inherit' });
+    }
+    _executeCommandAsync(command) {
+        return child_process.exec(command, { stdio: 'inherit' });
+    }
+
 };

@@ -8,6 +8,7 @@ const promptConfig = () => {
         return [
             {
                 type: 'confirm',
+                default:false,
                 name: 'githook_prepush',
                 message:"Do you want to install pre-push hook to ensure change files exist? 'rush change -v' will be invoked on every 'git push'."
             }

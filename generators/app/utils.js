@@ -1,10 +1,12 @@
 const fs = require('fs');
 const compareVersions = require('compare-versions');
-const { Buffer } = require('buffer');
-
 
 class Util {
-    
+
+    get rushVersionRequired() { 
+        return "5.66.2"
+    }
+
     _stripJSONComments(data){
         var re = new RegExp("\/\/(.*)", "g");
         var commentEval = new RegExp(/\/\*[\s\S]*?\*\/|([^:]|^)\/\/.*$/gm);
@@ -15,7 +17,7 @@ class Util {
                 this._stripJSONComments(
                     fs.readFileSync(filePath, 'utf-8')
             ));
-        return ( compareVersions(rushJson.rushVersion, "5.66.2") >=0) ;
+        return ( compareVersions(rushJson.rushVersion, this.rushVersionRequired) >=0) ;
     }
 
     _mergeJsonFiles(sourceFile, targetFile, mergingLogic) {

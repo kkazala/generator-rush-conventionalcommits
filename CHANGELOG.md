@@ -1,5 +1,9 @@
 # Change Log - generator-rush-conventionalcommits
 
+## 1.2.2
+
+Installation of `pre-push` git hook invoking `rush change -v` changed to **No** by default
+
 ## 1.2.1
 
 fix: reference to the correct autoinstaller in rush.changefiles.utils.js

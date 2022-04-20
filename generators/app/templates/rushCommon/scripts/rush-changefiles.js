@@ -52,7 +52,7 @@ function parseRecentCommits(projectName, projectPath, lastCommitInfo, repoPath, 
     }
 }
 
-async function getChangedProjectNamesAsync(rushConfiguration) {
+async function getChangedProjectNamesAsync() {
 
     let rushProjects = new Map()
 
@@ -118,7 +118,7 @@ function generateChangeFilesFromCommit() {
 
     if (lastCommitInfo) {
         //get changed projects managed by rush
-        getChangedProjectNamesAsync(rushConfiguration).then((changedProjects) => {
+        getChangedProjectNamesAsync().then((changedProjects) => {
             let fileAdded = false;
             console.log(changedProjects)
 

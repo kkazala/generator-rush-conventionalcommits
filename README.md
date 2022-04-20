@@ -3,7 +3,7 @@
 [![rush](https://img.shields.io/badge/rush-5.66.2-brightgreen)](https://rushjs.io/)
 [![yeoman generator](https://img.shields.io/badge/yeoman--generator-5.6.1-brightgreen)](https://yeoman.io/generators/)
 
-Add changelog generation based on [conventional commits](https://conventionalcommits.org/) convention to your rush monorepos.
+Add change file generation based on [conventional commits](https://conventionalcommits.org/) convention to your rush monorepos.
 See the [Rush and Conventional Commits Series](https://dev.to/kkazala/series/17133) for detailed description.
 
 >Important: This solution is using [ProjectChangeAnalyzer](https://api.rushstack.io/pages/rush-lib.projectchangeanalyzer/) class which is still in BETA and may change. It is NOT recommended to use this API in a production environment.
@@ -49,6 +49,7 @@ This generator creates the following resources:
 
 - **rush-commitlint**: rush autoinstaller installing `@commitlint/cli` and `@commitlint/config-conventional`
 - **rush-changemanager**: rush autoinstaller installing `@microsoft/rush-lib`, `@rushstack/node-core-library`, `gitlog` and `recommended-bump`
+- **rush-utils**: rush autoinstaller installing  `@microsoft/rush-lib` and `yargs`
 
 ### custom commands
 
