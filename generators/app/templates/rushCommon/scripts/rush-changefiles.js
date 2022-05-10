@@ -136,7 +136,7 @@ function generateChangeFilesFromCommit() {
             if (fileAdded) {
 
                 console.log(utils.Colors.Green + "Automatically adding change files" + utils.Colors.Reset);
-                utils.executeCommand(`git add ${rushConfiguration.changesFolder}`);
+                utils.executeCommand(`git add "${rushConfiguration.changesFolder}"`);
 
                 console.log(utils.Colors.Green + `Commiting change files with 'git commit --no-edit --no-verify --amend'` + utils.Colors.Reset);
                 utils.executeCommandAsync(`git commit --no-edit --no-verify --amend `);
