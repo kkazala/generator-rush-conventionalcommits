@@ -14,6 +14,44 @@ And if you need a reminder what these commits included, run `rush whatchanged --
 
 >**Important**: This solution is using [ProjectChangeAnalyzer](https://api.rushstack.io/pages/rush-lib.projectchangeanalyzer/) class which is still in BETA and may change. It is NOT recommended to use this API in a production environment.
 
+## Commands
+
+### rush whatchanged
+
+```md
+usage: rush whatchanged [-h] [-b BRANCH] [--recommend-changetype] [--show-commits]
+
+Provides support for creating change files.
+Optional arguments:
+
+-h, --help              Show this help message and exit.
+-b BRANCH, --target-branch BRANCH
+                        If this parameter is specified, compare the checked
+                        out branch with the specified branch to determine
+                        which projects were changed. If this parameter is not
+                        specified, the checked out branch is compared against
+                        the "main" branch.
+--recommend-changetype
+                        Parses commit messages included in the same revision
+                        range as the one used by rush change. Based on the
+                        commit type, suggest change type: 'major', 'minor',
+                        'patch' or 'none'
+--show-commits          Display commits included in the revision range used
+                        by rush change.
+```
+
+### rush commitint
+
+```md
+usage: rush commitint [-h] [--edit]
+
+Used by the commit-msg Git hook. This command invokes commitlint to ensure that the commit messages meet the conventional commit format.
+
+-h, --help              Show this help message and exit.
+--edit                  The commit message provided by a user
+
+```
+
 ## Prerequisites
 
 This generator requires that your project is managed with [rush](https://rushjs.io/pages/maintainer/setup_new_repo).
