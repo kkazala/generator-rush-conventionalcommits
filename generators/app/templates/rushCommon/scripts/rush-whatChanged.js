@@ -2,13 +2,13 @@
 const utils = require('./rush-changefiles-utils.js');
 const node_modules = path.join(__dirname, '..', 'autoinstallers/rush-changemanager/node_modules');
 
-async function ShowCommits() {
+async function ShowCommits(targetBranchParam) {
     try {
-        const currentBranch = utils.getCurrentBranch();
+        const targetBranch = targetBranchParam || utils.getRemoteDefaultBranch();
         //(ProjectChangeAnalyzer) this._git.getMergeBase(targetBranchName, terminal, shouldFetch);
-        const mergeHash = utils.executeCommandReturn(`git --no-optional-locks merge-base -- HEAD ${currentBranch}`);
+        const mergeHash = utils.executeCommandReturn(`git --no-optional-locks merge-base -- HEAD ${targetBranch}`);
 
-        const changedProjects = await utils.getChangedProjectsAsync(currentBranch);
+        const changedProjects = await utils.getChangedProjectsAsync(targetBranch);
         changedProjects.forEach(project => {
             utils.executeCommand(`git shortlog ${mergeHash}... -- "${project.projectRelativeFolder}"`);
         });
@@ -19,7 +19,7 @@ async function ShowCommits() {
     }
 }
 
-async function RecommendChangeType() {
+async function RecommendChangeType(targetBranchParam) {
 
     function _getRevListRegex(mergeCommitHash, regex, projectFolder) {
         return [
@@ -65,10 +65,10 @@ async function RecommendChangeType() {
     }
 
     try {
-        const currentBranch = utils.getCurrentBranch();
-        const mergeHash = utils.executeCommandReturn(`git --no-optional-locks merge-base HEAD ${currentBranch}`);
+        const targetBranch = targetBranchParam || utils.getRemoteDefaultBranch();
+        const mergeHash = utils.executeCommandReturn(`git --no-optional-locks merge-base HEAD ${targetBranch}`);
 
-        const changedProjects = await utils.getChangedProjectsAsync(currentBranch);
+        const changedProjects = await utils.getChangedProjectsAsync(targetBranch);
 
         if (changedProjects.size > 0) {
             console.log(utils.Colors.Yellow + 'Based on conventional commits convention, we recommend the following change types: ' + utils.Colors.Reset);
@@ -82,17 +82,14 @@ async function RecommendChangeType() {
     }
 }
 
+const showCommitsParam = utils.getArg("showCommits");
+const recommendChangeTypeParam = utils.getArg("recommendChangetype");
+const targetBranchParam = utils.getArg("targetBranch");
 
-
-
-const showCommits = utils.getArg("showCommits");
-const recommendChangeType = utils.getArg("recommendChangetype");
-
-
-if (showCommits) {
-    ShowCommits();
+if (showCommitsParam) {
+    ShowCommits(targetBranchParam);
 }
 
-if (recommendChangeType) {
-    RecommendChangeType();
+if (recommendChangeTypeParam) {
+    RecommendChangeType(targetBranchParam);
 }

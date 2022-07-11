@@ -91,6 +91,10 @@ class Util {
             return null;
         }
     }
+    getRemoteDefaultBranch() {
+        const rushConfiguration = rushLib.RushConfiguration.loadFromDefaultLocation({ startingFolder: process.cwd() });
+        return rushConfiguration.repositoryDefaultRemote;
+    }
     async getChangedProjectsAsync(currentBranch) {
         const rushConfiguration = rushLib.RushConfiguration.loadFromDefaultLocation({ startingFolder: process.cwd() });
         const projectAnalyzer = new rushLib.ProjectChangeAnalyzer(rushConfiguration);

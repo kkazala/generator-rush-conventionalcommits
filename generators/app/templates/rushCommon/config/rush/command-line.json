@@ -54,6 +54,16 @@
       ]
     },
     {
+      "parameterKind": "string",
+      "argumentName": "TARGET_BRANCH",
+      "longName": "--target-branch",
+      "shortName": "-b",
+      "description": "",
+      "associatedCommands": [
+        "whatchanged"
+      ]
+    },
+    {
       "parameterKind": "flag",
       "longName": "--quiet",
       "shortName": "-q",
