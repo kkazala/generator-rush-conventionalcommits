@@ -9,14 +9,14 @@ module.exports = class extends Generator {
 
     initializing() {
 
-        this.log(chalk.green("rush-conventionalcommits " +this.rootGeneratorVersion()))
-       
+        this.log(chalk.green("rush-conventionalcommits " + this.rootGeneratorVersion()))
+
         const rushJson = `${this.contextRoot}/rush.json`
         if (!this.fs.exists(rushJson)) {
-            this.log(chalk.red('This generator needs to be invoked from rush root directory')); 
+            this.log(chalk.red('This generator needs to be invoked from rush root directory'));
             process.exit(1)
         }
-        if (!utils._assertRushVersion(rushJson)) { 
+        if (!utils._assertRushVersion(rushJson)) {
             this.log(chalk.red(`This generator requires rush version ${utils.rushVersionRequired} or newer. Please either upgrade rush, or use older version of the generator.`));
             process.exit(1)
         }
@@ -24,7 +24,7 @@ module.exports = class extends Generator {
             this.log(chalk.blue("Please invoke 'rush install' before running this generator"));
             process.exit(1)
         }
-    } 
+    }
 
     async prompting() {
         this.answers = await this.prompt(
@@ -66,22 +66,30 @@ module.exports = class extends Generator {
         this.fs.copy(
             `${this.sourceRoot()}/rushCommon/autoinstallers/.`,
             `${this.contextRoot}/common/autoinstallers/.`
-        );        
+        );
 
         this.log(chalk.green("Copying rush githooks"));
         this.fs.copy(
             `${this.sourceRoot()}/rushCommon/git-hooks`,
             `${this.contextRoot}/common/git-hooks`
         );
-        
+
+        // Optional hooks
+        if (this.answers.githook_postcommit) {
+            this.log(chalk.green("Copying rush post-commit hook"));
+            this.fs.copy(
+                `${this.sourceRoot()}/rushCommon/git-hooks-optional/post-commit`,
+                `${this.contextRoot}/common/git-hooks/post-commit`
+            );
+        }
         if (this.answers.githook_prepush) {
-            this.log(chalk.green("Copying rush githooks"));
+            this.log(chalk.green("Copying rush pre-push hook"));
             this.fs.copy(
                 `${this.sourceRoot()}/rushCommon/git-hooks-optional/pre-push`,
                 `${this.contextRoot}/common/git-hooks/pre-push`
             );
         }
-        
+
         this.log(chalk.green("Copying commitlint.config"));
         this.fs.copy(
             `${this.sourceRoot()}/commitlint.config.js`,

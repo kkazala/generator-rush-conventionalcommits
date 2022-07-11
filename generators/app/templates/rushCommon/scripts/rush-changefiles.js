@@ -9,26 +9,31 @@ const recommendedBump = require(path.join(node_modules, 'recommended-bump'));
 
 function parseLastCommit(repoPath) {
     const lastCommit = gitlog({ repo: repoPath, file: repoPath, number: 1, fields: ["subject", "body", "rawBody", "authorEmail", "hash"] });
+    let result = false;
     //fix, feat or BREAKING?
-    const { increment } = recommendedBump([lastCommit[0].rawBody]);
-
-    if (increment) {
-        return {
-            increment: increment,
-            subject: lastCommit[0].subject,
-            emailAddress: lastCommit[0].authorEmail,
-            lastMessage: lastCommit[0].rawBody,
-            hash: lastCommit[0].hash,
+    try {
+        const { increment } = recommendedBump([lastCommit[0].rawBody]);
+        if (increment) {
+            result = {
+                increment: increment,
+                subject: lastCommit[0].subject,
+                emailAddress: lastCommit[0].authorEmail,
+                lastMessage: lastCommit[0].rawBody,
+                hash: lastCommit[0].hash,
+            }
         }
     }
-    else {
-        return false;
+    catch (ex) {
+        console.log(this.Colors.Red + `"${commit.subject}" does not follow conventional commits convention.` + this.Colors.Reset)
     }
-
+    finally {
+        return result;
+    }
 }
+
 function parseRecentCommits(projectName, projectPath, lastCommitInfo, repoPath, defaultCommitMessage) {
 
-    const commits = gitlog({repo: repoPath,file: projectPath,number: 2,fields:["subject", "body", "rawBody", "authorEmail", "hash"]});
+    const commits = gitlog({ repo: repoPath, file: projectPath, number: 2, fields: ["subject", "body", "rawBody", "authorEmail", "hash"] });
     //if the last two messages are the same, skip change file generation
     const commitMsgPass = (commits.length == 2 && commits[0].rawBody != commits[1].rawBody || commits.length == 1) && commits[0].body != defaultCommitMessage;
     const projectInCommit = lastCommitInfo.hash == commits[0].hash;
@@ -59,12 +64,12 @@ async function getChangedProjectNamesAsync() {
     try {
         const currentBranch = utils.getCurrentBranch();
         console.log(utils.Colors.Green + `Checking for updates to ${currentBranch}` + utils.Colors.Reset);
-        
+
         if (currentBranch) {
             const changedProjects = await utils.getChangedProjectsAsync(currentBranch);
 
             changedProjects.forEach(project => {
-                //projects within the Rush configuration which declare this project as a dependency. 
+                //projects within the Rush configuration which declare this project as a dependency.
                 let consumingProjects = new Map()
                 project.consumingProjects.forEach(project => {
                     consumingProjects.set(project.packageName, project.projectFolder);
@@ -92,7 +97,7 @@ function createChangeFile(rushConfig, bumpInfo) {
     const file = require(changeFilePath);
     file.changes[0].comment = bumpInfo.lastMessage;
     file.changes[0].type = bumpInfo.increment;
-    fs.writeFileSync(changeFilePath, JSON.stringify(file, null,2));
+    fs.writeFileSync(changeFilePath, JSON.stringify(file, null, 2));
 }
 
 function generateChangeFiles(rushConfig, bumpInfo, projectInfo) {
@@ -102,7 +107,7 @@ function generateChangeFiles(rushConfig, bumpInfo, projectInfo) {
     //create change files for consuming projects
     let patchInfo = { ...bumpInfo }
     patchInfo.increment = "patch"
-    patchInfo.subject= `[dependency] ${bumpInfo.subject}`
+    patchInfo.subject = `[dependency] ${bumpInfo.subject}`
 
     projectInfo.consumingProjects.forEach((value, key) => {
         patchInfo.projectName = key
@@ -145,7 +150,7 @@ function generateChangeFilesFromCommit() {
             }
         });
     }
-    else { 
+    else {
         console.log(`Change file not required for this commit`)
     }
 }

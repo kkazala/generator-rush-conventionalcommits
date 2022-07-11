@@ -3,10 +3,16 @@
 [![rush](https://img.shields.io/badge/rush-5.66.2-brightgreen)](https://rushjs.io/)
 [![yeoman generator](https://img.shields.io/badge/yeoman--generator-5.6.1-brightgreen)](https://yeoman.io/generators/)
 
-Add change file generation based on [conventional commits](https://conventionalcommits.org/) convention to your rush monorepos.
-See the [Rush and Conventional Commits Series](https://dev.to/kkazala/series/17133) for detailed description.
+Add **support** for change file generation based on [conventional commits](https://conventionalcommits.org/) convention to rush monorepos.
 
->Important: This solution is using [ProjectChangeAnalyzer](https://api.rushstack.io/pages/rush-lib.projectchangeanalyzer/) class which is still in BETA and may change. It is NOT recommended to use this API in a production environment.
+The difference between commit messages and rush's change files is explained by [Pete Gonzalez](https://github.com/octogonz):
+>**Git commits document steps of work.** For example, when I create a PR, I might break it into 5 separate commits that are easier to review one by one, rather than reading the entire PR diff. And then during the code review, people may suggest various improvements, which may lead to 10 more commits before I finally merge my PR. Some of these commits will be pure bookkeeping (`ran "rush update"`, `merged from master`, etc). Git commits are written for the audience of people who work on the code. Whereas...<br/>
+**Change logs inform consumers what's new.** Consumers need to know which bugs got fixed, which new features were added, or alert consumers about possible breaking changes. This audience often doesn't know anything about the underlying implementation, so a different style of writing is needed. In a monorepo, one Git commit might impact many different projects, and perhaps in a way that needs to be explained differently for each project. For certain important projects, the change log may serve as a public announcement to customers. The release team may have a step where they manually revise the changelog before publishing a release.
+
+If you follow [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/), your commits already contain information necessary for calculating the change type. The `rush whatchanged --recommend-changetype` displays the change type suggestion for each changed project, based on commits that require the change file generation.
+And if you need a reminder what these commits included, run `rush whatchanged --show-commits` to see the commits history in a `shortlog` format.
+
+>**Important**: This solution is using [ProjectChangeAnalyzer](https://api.rushstack.io/pages/rush-lib.projectchangeanalyzer/) class which is still in BETA and may change. It is NOT recommended to use this API in a production environment.
 
 ## Prerequisites
 
@@ -41,31 +47,68 @@ Then add the conventional commits support:
 yo rush-conventionalcommits
 ```
 
-## About the rush-conventionalcommits configuration
+## rush-conventionalcommits configuration
 
 This generator creates the following resources:
 
 ### autoinstallers
 
-- **rush-commitlint**: rush autoinstaller installing `@commitlint/cli` and `@commitlint/config-conventional`
-- **rush-changemanager**: rush autoinstaller installing `@microsoft/rush-lib`, `@rushstack/node-core-library`, `gitlog` and `recommended-bump`
+- **rush-commitlint**: rush autoinstaller installing:
+  - `@commitlint/cli` and
+  - `@commitlint/config-conventional`
+
+- **rush-changemanager**: rush autoinstaller installing:
+  - `@microsoft/rush-lib`,
+  - `@rushstack/node-core-library`,
+  - `gitlog`,
+  - `recommended-bump`,
+  - `parse-commit-message`,
+  - `yargs` and
+  - `conventional-commit-types`
 
 ### custom commands
 
-- **commitlint** runs `commitlint` on the commit messages; used by the commit-msg Git hook.
-- **changefiles** executes the custom `rush-changefiles.js` script to create rush change files, if necessary
+- **`commitlint`** runs `commitlint` on the commit messages; used by the commit-msg Git hook.
+- **`whatchanged`** provides recommendation for a change type, and prints commits history
+- **`changefiles`** (**DEPRECATED**) creates rush change files
 
 ### git-hooks
 
 - **commit-msg** invokes `rush commitlint` custom command to ensure the commit message has correct format
-- **post-commit** invokes `rush changefiles` custom command to generate rush change files, if necessary
+- **post-commit**  (**DEPRECATED**) invokes `rush changefiles` custom command to generate rush change files, if necessary
 - **pre-push** (optional) invokes `rush change -v` to verify change files are generated for changed projects
 
 > **Important**: Rush will install the git hooks during `rush update` executed as part of this generator. For this step to succeed, you must initialize the git repo first. Otherwise, please execute the `rush update` command manually, once you are ready.
 
 ### scripts
 
-- **scripts/rush-changefiles.js** this is where the magic happens. Invoked by `rush changefiles` during `post-commit`, parses the commit message and based on the conventional commits specification, decides whether a new change file should be created.
+#### **scripts/rush-whatchanged.js**
+
+To limit parsed commits, retrieve merge base using
+
+```powershell
+git --no-optional-locks merge-base -- HEAD ${branchName}
+```
+
+This is the same command as used by `ProjectChangeAnalyzer` in `this._git.getMergeBase` invocation.
+
+- **Display commits history:** For each project returned by `projectAnalyzer.getChangedProjectsAsync`, display commits history since merge base, by executing
+
+```powershell
+git shortlog ${mergeHash}... -- "${project.projectRelativeFolder}"
+```
+
+- **Suggest change type** For each project returned by `projectAnalyzer.getChangedProjectsAsync`, obtain commits indicating breaking/major/minor change, using
+
+```powershell
+git rev-list --count --extended-regexp --grep ${regex} -- ${projectFolder}
+```
+
+The conventional commit types are retrieved from [conventional-commit-types](https://www.npmjs.com/package/conventional-commit-types)
+
+#### **scripts/rush-changefiles.js**  **DEPRECATED**
+
+Invoked by `rush changefiles` during `post-commit`, parses the commit message and based on the conventional commits specification, decides whether a new change file should be created.
 Types `fix:`, `feat:` or `BREAKING CHANGE:` will cause generation of a new change file, if the commit message has not been used just before.
 
 > **Important**: If you want to generate change files for other commit messages types, install the `pre-push` hook. It will remind you to generate change files before `git push`, if none exist for the project.
@@ -75,8 +118,14 @@ Types `fix:`, `feat:` or `BREAKING CHANGE:` will cause generation of a new chang
 - make a change in any of the projects managed by rush (listed in rush.json)
 - `git add .`
 - `git commit -m "fix: testing rush change file generation"`
+- run `rush whatchanged --recommend-changetype`
 - observe the information printed to the terminal. The first time a rush command depending on an autoinstaller is executed, rush will install Rush engine, package manager, dependencies defined in the autoinstaller. The next time, the command will execute much faster.
-- ensure that a new {branchName}_{timestamp}.json file has been created in the common/changes/project-name folder.
+- see the recommendation for the change type, it should have the format similar to below:
+
+```powershell
+Based on conventional commits convention, we recommend the following change types:
+- org-app: patch
+```
 
 ## Older version of rush?
 
@@ -103,3 +152,5 @@ to:
 
 Rush **5.64.0** introduces `--quiet` command for suppressing startup information.
 Apart from updating **common\autoinstallers\rush-changemanager\package.json** to reference correct version of rush modules, update the `git hooks` to remove the `--quiet` flag.
+
+See the [Rush and Conventional Commits Series](https://dev.to/kkazala/series/17133) for detailed description.

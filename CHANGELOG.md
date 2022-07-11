@@ -1,5 +1,21 @@
 # Change Log - generator-rush-conventionalcommits
 
+## 1.3.0
+
+### Features
+
+- `rush whatchanged` command added.
+`rush whatchanged --show-commits` displays the history of commits that may be used for change files generation.
+`rush whatchanged--recommend-changetype` parses commeits and suggests change type based on the [conventional commits convention](https://www.conventionalcommits.org/en/v1.0.0/)
+
+### Fixes
+
+- When automatically generating change files, the `recommendedBump` was throwing error if the commit didn't follow conventional commits (as a result of merge for example). Error handling is now added
+
+## 1.2.3
+
+Support for repositories with white space in local path
+
 ## 1.2.2
 
 Installation of `pre-push` git hook invoking `rush change -v` changed to **No** by default

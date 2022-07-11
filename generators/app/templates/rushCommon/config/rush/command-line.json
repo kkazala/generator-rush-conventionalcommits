@@ -17,6 +17,14 @@
       "description": "Based on the last commit message, creates a rush change file rspecting conventional commits specification.",
       "autoinstallerName": "rush-changemanager",
       "shellCommand": "node common/scripts/rush-changefiles.js"
+    },
+    {
+      "name": "whatchanged",
+      "commandKind": "global",
+      "summary": "What changed?",
+      "description": "Displays history of commits and, if using conventional commits, suggestion for the change type",
+      "autoinstallerName": "rush-changemanager",
+      "shellCommand": "node common/scripts/rush-whatChanged.js"
     }
   ],
   "parameters": [
@@ -27,6 +35,32 @@
       "description": "",
       "associatedCommands": [
         "commitlint"
+      ]
+    },
+    {
+      "parameterKind": "flag",
+      "longName": "--recommend-changetype",
+      "description": "Recommend change type based on the conventional commits convention",
+      "associatedCommands": [
+        "whatchanged"
+      ]
+    },
+    {
+      "parameterKind": "flag",
+      "longName": "--show-commits",
+      "description": "Display my commits, to support change file generation",
+      "associatedCommands": [
+        "whatchanged"
+      ]
+    },
+    {
+      "parameterKind": "flag",
+      "longName": "--quiet",
+      "shortName": "-q",
+      "description": "suppress startup information",
+      "associatedCommands": [
+        "commitlint",
+        "whatchanged"
       ]
     }
   ]

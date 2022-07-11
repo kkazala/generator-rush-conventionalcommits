@@ -1,8 +1,8 @@
 #!/bin/sh
 
-# "commit-msg" hook is called by "git-commit" and "git-merge" commands. 
-# The commit-msg hook takes one parameter, which is the path (.git/COMMIT_EDITMSG) to a temporary file that contains the commit message written by the developer. 
-# The hook is allowed to edit the message file in place, and can be used to normalize the message into some project standard format. 
+# "commit-msg" hook is called by "git-commit" and "git-merge" commands.
+# The commit-msg hook takes one parameter, which is the path (.git/COMMIT_EDITMSG) to a temporary file that contains the commit message written by the developer.
+# The hook is allowed to edit the message file in place, and can be used to normalize the message into some project standard format.
 # It can also be used to refuse the commit after inspecting the message file.
 # If this script exits non-zero, Git aborts the commit process.
 
@@ -12,5 +12,8 @@
 # and uses the "rush-commitlint" autoinstaller.
 
 # Lint commit message to ensure it has correct format
-node common/scripts/install-run-rush.js --quiet commitlint --edit $1 
+
+# If rush root is not in repo root, cd RUSH_ROOT_FOLDER
+# cd RUSH_ROOT_FOLDER
+node common/scripts/install-run-rush.js --quiet commitlint --edit $1
 
