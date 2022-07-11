@@ -84,27 +84,27 @@ This generator creates the following resources:
 
 #### **scripts/rush-whatchanged.js**
 
-To limit parsed commits, retrieve merge base using
-
-```powershell
-git --no-optional-locks merge-base -- HEAD ${branchName}
-```
-
-This is the same command as used by `ProjectChangeAnalyzer` in `this._git.getMergeBase` invocation.
-
 - **Display commits history:** For each project returned by `projectAnalyzer.getChangedProjectsAsync`, display commits history since merge base, by executing
 
 ```powershell
 git shortlog ${mergeHash}... -- "${project.projectRelativeFolder}"
 ```
 
-- **Suggest change type** For each project returned by `projectAnalyzer.getChangedProjectsAsync`, obtain commits indicating breaking/major/minor change, using
+- **Suggest change type** For each project returned by `projectAnalyzer.getChangedProjectsAsync`, obtain commits indicating major/minor/patch change, using
 
 ```powershell
 git rev-list --count --extended-regexp --grep ${regex} -- ${projectFolder}
 ```
 
-The conventional commit types are retrieved from [conventional-commit-types](https://www.npmjs.com/package/conventional-commit-types)
+The conventional commit types are retrieved from [conventional-commit-types](https://www.npmjs.com/package/conventional-commit-types).
+
+To limit parsed commits, the merge base is retrieved using
+
+```powershell
+git --no-optional-locks merge-base -- HEAD ${branchName}
+```
+
+This is the same command as used by `ProjectChangeAnalyzer` in `this._git.getMergeBase` invocation.
 
 #### **scripts/rush-changefiles.js**  **DEPRECATED**
 
@@ -154,3 +154,4 @@ Rush **5.64.0** introduces `--quiet` command for suppressing startup information
 Apart from updating **common\autoinstallers\rush-changemanager\package.json** to reference correct version of rush modules, update the `git hooks` to remove the `--quiet` flag.
 
 See the [Rush and Conventional Commits Series](https://dev.to/kkazala/series/17133) for detailed description.
+npm publish
