@@ -18,7 +18,7 @@ And if you need a reminder what these commits included, run `rush whatchanged --
 
 ### rush whatchanged
 
-```md
+```
 usage: rush whatchanged [-h] [-b BRANCH] [--recommend-changetype] [--show-commits]
 
 Provides support for creating change files.
@@ -42,7 +42,7 @@ Optional arguments:
 
 ### rush commitint
 
-```md
+```
 usage: rush commitint [-h] [--edit]
 
 Used by the commit-msg Git hook. This command invokes commitlint to ensure that the commit messages meet the conventional commit format.

@@ -3,25 +3,25 @@ const compareVersions = require('compare-versions');
 
 class Util {
 
-    get rushVersionRequired() { 
+    get rushVersionRequired() {
         return "5.66.2"
     }
 
-    _stripJSONComments(data){
+    _stripJSONComments(data) {
         var re = new RegExp("\/\/(.*)", "g");
         var commentEval = new RegExp(/\/\*[\s\S]*?\*\/|([^:]|^)\/\/.*$/gm);
         return data.replace(commentEval, '');
     }
-    _assertRushVersion(filePath) { 
+    _assertRushVersion(filePath) {
         const rushJson = JSON.parse(
-                this._stripJSONComments(
-                    fs.readFileSync(filePath, 'utf-8')
+            this._stripJSONComments(
+                fs.readFileSync(filePath, 'utf-8')
             ));
-        return ( compareVersions(rushJson.rushVersion, this.rushVersionRequired) >=0) ;
+        return (compareVersions(rushJson.rushVersion, this.rushVersionRequired) >= 0);
     }
 
     _mergeJsonFiles(sourceFile, targetFile, mergingLogic) {
-        
+
         this._ensureFileExists(sourceFile);
         this._ensureFileExists(targetFile);
 
@@ -39,31 +39,36 @@ class Util {
             throw err;
         }
     }
-    
-    _mergeCommands(sourceJson, targetJson) { 
 
-        for (let key in sourceJson.commands) { 
+    _mergeCommands(sourceJson, targetJson) {
+
+        for (let key in sourceJson.commands) {
             let newCmnd = sourceJson.commands[key].name
-            let found = targetJson.commands.filter((cmd) =>  cmd.name == newCmnd )
+            let found = targetJson.commands.filter((cmd) => cmd.name == newCmnd)
 
             if (found.length == 0) {
                 targetJson.commands.push(sourceJson.commands[key]);
             }
         }
 
-        for (let key in sourceJson.parameters) { 
+        for (let key in sourceJson.parameters) {
             let newParam = sourceJson.parameters[key].longName
-            let found = targetJson.parameters.filter((param) =>  param.longName == newParam )
+            let found = targetJson.parameters.filter((param) => param.longName == newParam)
 
             if (found.length == 0) {
                 targetJson.parameters.push(sourceJson.parameters[key]);
+            }
+            else {
+                let associatedCmds = sourceJson.parameters[key].associatedCommands;
+                let unique = [... new Set(found[0].associatedCommands.concat(associatedCmds))];
+                found[0].associatedCommands = unique;
             }
         }
 
         return targetJson;
     }
 
-    _ensureFileExists(filePath) { 
+    _ensureFileExists(filePath) {
         if (!fs.existsSync(filePath)) {
             const error = 'Error: File names ' + filePath + ' cannot be found';
             throw error;
