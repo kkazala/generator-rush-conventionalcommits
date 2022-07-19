@@ -46,6 +46,7 @@ Optional arguments:
 usage: rush commitint [-h] [--edit]
 
 Used by the commit-msg Git hook. This command invokes commitlint to ensure that the commit messages meet the conventional commit format.
+The rules are defined in `commitlint.config.js` file; see [reference rules](https://commitlint.js.org/#/reference-rules) for possible options.
 
 -h, --help              Show this help message and exit.
 --edit                  The commit message provided by a user

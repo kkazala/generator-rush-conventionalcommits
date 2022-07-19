@@ -75,13 +75,6 @@ module.exports = class extends Generator {
         );
 
         // Optional hooks
-        if (this.answers.githook_postcommit) {
-            this.log(chalk.green("Copying rush post-commit hook"));
-            this.fs.copy(
-                `${this.sourceRoot()}/rushCommon/git-hooks-optional/post-commit`,
-                `${this.contextRoot}/common/git-hooks/post-commit`
-            );
-        }
         if (this.answers.githook_prepush) {
             this.log(chalk.green("Copying rush pre-push hook"));
             this.fs.copy(

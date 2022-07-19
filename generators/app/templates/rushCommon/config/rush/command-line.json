@@ -11,14 +11,6 @@
       "shellCommand": "commitlint"
     },
     {
-      "name": "changefiles",
-      "commandKind": "global",
-      "summary": "Creates a rush change file.",
-      "description": "Based on the last commit message, creates a rush change file rspecting conventional commits specification.",
-      "autoinstallerName": "rush-changemanager",
-      "shellCommand": "node common/scripts/rush-changefiles.js"
-    },
-    {
       "name": "whatchanged",
       "commandKind": "global",
       "summary": "What changed?",
@@ -46,9 +38,20 @@
       ]
     },
     {
-      "parameterKind": "flag",
+      "parameterKind": "choice",
       "longName": "--show-commits",
       "description": "Display my commits, to support change file generation",
+      "defaultValue": "shortlog",
+      "alternatives": [
+        {
+          "name": "shortlog",
+          "description": "Prints commits in a shortlog format to the terminal"
+        },
+        {
+          "name": "full",
+          "description": "Prints full commits message, including body, to a file"
+        }
+      ],
       "associatedCommands": [
         "whatchanged"
       ]

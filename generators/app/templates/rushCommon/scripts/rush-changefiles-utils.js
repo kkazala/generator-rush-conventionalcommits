@@ -4,7 +4,6 @@ const path = require('path');
 const node_modules = path.join(__dirname, '..', 'autoinstallers/rush-changemanager/node_modules');
 const rushLib = require(path.join(node_modules, '@microsoft/rush-lib'));
 const rushCore = require(path.join(node_modules, '@rushstack/node-core-library'));
-const { validateHeader, parseHeader } = require(path.join(node_modules, 'parse-commit-message'));
 
 class Util {
 
@@ -19,26 +18,6 @@ class Util {
     getArg(argName) {
         const yargs = require(path.join(node_modules, 'yargs'));
         return yargs(process.argv).argv[argName];
-    }
-    parseGitLog(output, delimiter) {
-        let arr = output.split(delimiter)
-        // return unique
-        return [...new Set(arr)].filter(e => e);
-    }
-    parseCommitsToRawBody(output) {
-        const commitsRawBody = [];
-        output.forEach(commit => {
-            try {
-                const { error } = validateHeader(parseHeader(commit.subject), true);
-                if (error === undefined) {
-                    commitsRawBody.push(commit.rawBody)
-                }
-            }
-            catch (ex) {
-                console.log(this.Colors.Red + `"${commit.subject}" does not follow conventional commits convention` + this.Colors.Reset)
-            }
-        })
-        return commitsRawBody;
     }
     executeCommand(command) {
         //stdio: 'inherit': process will use the parent's stdin, stdout and stderr streams
@@ -78,6 +57,13 @@ class Util {
             console.log('There was an issue detecting your Git name...');
             return undefined;
         }
+    }
+    getChangesFolder() {
+        const rushConfiguration = rushLib.RushConfiguration.loadFromDefaultLocation({ startingFolder: process.cwd() });
+        return rushConfiguration.changesFolder;
+    }
+    getTempFolder() {
+        return rushLib.RushConfiguration.loadFromDefaultLocation({ startingFolder: process.cwd() }).commonTempFolder;
     }
     getCurrentBranch() {
         const rushConfiguration = rushLib.RushConfiguration.loadFromDefaultLocation({ startingFolder: process.cwd() });
