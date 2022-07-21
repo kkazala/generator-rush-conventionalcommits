@@ -1,35 +1,39 @@
 ﻿const fs = require("fs");
 const path = require('path');
-const utils = require('./rush-changefiles-utils.js');
+const { utils, rushUtils } = require('./rush-changefiles-utils.js');
 const node_modules = path.join(__dirname, '..', 'autoinstallers/rush-changemanager/node_modules');
 
-async function ShowCommits(targetBranchParam, showCommitsParam) {
 
-    function _exportLog(mergeBaseHash, projectRelativeFolder, projectName, changeFileName, logFormat, targetFolder) {
+async function rushChangeInfo(_showCommitsParam, _recommendChangetypeParam, _targetBranchParam) {
 
-        const since = _getSince(changeFileName);
-        const commitsCount = utils.executeCommandReturn(`git rev-list ${mergeBaseHash}... --count ${since} -- "${projectRelativeFolder}"`);
-        if (commitsCount > 0) {
-            console.log(utils.Colors.Yellow + `- ${projectName}` + utils.Colors.Reset);
-            if (changeFileName !== undefined) {
-                console.log(`     Change file(s) already exist. Retrieving commits after "${changeFileName}"`)
-            }
-
-            switch (logFormat) {
-                case 'full':
-                    const targetPath = path.join(targetFolder, `${projectName}.txt`)
-                    utils.executeCommand(`git --no-pager log ${mergeBaseHash}... ${since} -- "${projectRelativeFolder}" > ${targetPath}`);
-                    console.log(`     Commits history saved to "` + utils.Colors.Yellow + targetPath + utils.Colors.Reset + `"`)
-
-                    break;
-                case 'shortlog':
-                    utils.executeCommand(`git shortlog ${mergeBaseHash}... ${since} -- "${projectRelativeFolder}"`);
-                    break;
-            }
+    function printChangesSummary(projectName, commitsCount, stagedChangesCount) {
+        console.log('\n' + utils.Colors.Yellow + `- ${projectName}:` + utils.Colors.Reset + ` commits: ${commitsCount}, staged files: ${stagedChangesCount}`)
+    }
+    function printChangeFileInfo(changeFileName) {
+        if (changeFileName !== undefined) {
+            console.log(`  rush will ` + utils.Colors.Yellow + `NOT` + utils.Colors.Reset + ` request change files for this project, because a change file already exists`)
         }
     }
-    function _getChangeFiles(targetBranch) {
-        const changesFolder = utils.getChangesFolder();
+    function printRecommendedChangeType(changeType, info) {
+        const infoMsg = (info) ? ` (${info})` : '';
+        console.log(`  recommended change type: ` + utils.Colors.Green + changeType + utils.Colors.Reset + infoMsg);
+    }
+    function printCommits(logFormat, mergeBaseHash, since, changeFileName, projectRelativeFolder, targetPath) {
+
+        const getCommitsHeader = (changeFileName === undefined) ? `commits history` : `commits history since '${changeFileName}'`;
+        switch (logFormat) {
+            case 'full':
+                utils.executeCommand(`git --no-pager log ${mergeBaseHash}... ${since} -- "${projectRelativeFolder}" > ${targetPath}`);
+                console.log(`  ${getCommitsHeader}: '` + utils.Colors.Yellow + targetPath + utils.Colors.Reset + `'`)
+                break;
+            case 'shortlog':
+                console.log(`  ${getCommitsHeader}: `)
+                utils.executeCommand(`git shortlog ${mergeBaseHash}... ${since} -- "${projectRelativeFolder}"`);
+                break;
+        }
+    }
+    function getChangeFiles(targetBranch) {
+        const changesFolder = rushUtils.getChangesFolder;
         const changeFiles = utils.executeCommandReturn(`git diff ${targetBranch}... --name-only --no-renames --diff-filter=A -- "${changesFolder}"`).split('\n');
 
         const result = changeFiles.reduce((acc, obj) => {
@@ -43,7 +47,7 @@ async function ShowCommits(targetBranchParam, showCommitsParam) {
 
         return result;
     }
-    function _getSince(fileName) {
+    function getDateFromChangeFile(fileName) {
         if (fileName === undefined) {
             return '';
         }
@@ -53,98 +57,117 @@ async function ShowCommits(targetBranchParam, showCommitsParam) {
 
         return `--since=${val[0]}-${val[1]}-${val[2]}T${val[3]}:${val[4]}:00`;
     }
+    function getCommitsCount(_mergeBaseHash, _since, _projectRelativeFolder) {
+        return utils.executeCommandReturn(`git rev-list ${_mergeBaseHash}... --count ${_since} -- "${_projectRelativeFolder}"`);
+    }
+    function getStagedInfo(_changedProjects) {
+        let result = {}
+        _changedProjects.forEach(project => {
+            // utils.executeCommand(`git diff --cached --stat -- "${project.projectRelativeFolder}"`);
+            result[project.packageName] = utils.executeCommandReturn(`git diff --cached --name-only -- "${project.projectRelativeFolder}"`).split('\n').length;
+        });
+        return result;
+    }
+    //---
+    function showCommits(_logFormat, _mergeHash, _since, _project, _commitsCount, _changeFileName) {
 
+        function _ensureDestinationFolder() {
+            const targetFolder = path.join(rushUtils.getTempFolder, "gitlog");
+            fs.mkdirSync(targetFolder, { recursive: true });
+            return targetFolder;
+        }
 
-    try {
-        const targetBranch = targetBranchParam || utils.getRemoteDefaultBranch();
-        //(ProjectChangeAnalyzer) this._git.getMergeBase(targetBranchName, terminal, shouldFetch);
-        const mergeHash = utils.executeCommandReturn(`git --no-optional-locks merge-base -- HEAD ${targetBranch}`);
-        const changedProjects = await utils.getChangedProjectsAsync(targetBranch);
-        const changeFiles = _getChangeFiles(targetBranch);
+        if (_commitsCount > 0) {
+            const destFolder = _ensureDestinationFolder();
+            const fileName = _project.projectRelativeFolder.replace('/', '_').replace('\\', '_')
+            printCommits(_logFormat, _mergeHash, _since, _changeFileName, _project.projectRelativeFolder, path.join(destFolder, `${fileName}.txt`))
+        }
+    }
 
-        const targetFolder = path.join(utils.getTempFolder(), "gitlog");
-        fs.mkdirSync(targetFolder, { recursive: true });    //ensure folder exists
+    function recommendChangeType(_mergeHash, _project, _commitsCount) {
+        function _getChangeType(mergeHash, projectFolder) {
+            function _getRevListRegex(mergeCommitHash, regex, projectFolder) {
+                return [
+                    'rev-list',
+                    `${mergeCommitHash}...`,
+                    '--count',
+                    '--extended-regexp',
+                    '--grep',
+                    regex,
+                    '--',
+                    projectFolder
+                ];
+            }
+            function _isMajor(mergeCommitHash, projectFolder) {
+                const cctypes = require(path.join(node_modules, 'conventional-commit-types'));
+                const types = Object.keys(cctypes.types).join('|');
+                const result = utils.spawnCommandReturn('git', _getRevListRegex(mergeCommitHash, `(^(${types})(\(.*?\))?!:.*|^BREAKING CHANGE: )`, projectFolder))
+                return parseInt(result) > 0;
+            }
+            function _isMinor(mergeCommitHash, projectFolder) {
+                const result = utils.spawnCommandReturn('git', _getRevListRegex(mergeCommitHash, '^feat((.*?))?:', projectFolder))
+                return parseInt(result) > 0;
+            }
+            function _isPatch(mergeCommitHash, projectFolder) {
+                const result = utils.spawnCommandReturn('git', _getRevListRegex(mergeCommitHash, '^fix((.*?))?:', projectFolder))
+                return parseInt(result) > 0;
+            }
+
+            if (utils.hotfixChangeEnabled) {
+                return { changeType: "none, hotfix", info: "if 'hotfixChangeEnabled' is set in rush.json, 'rush change' only allows a 'hotfix' change types" }
+
+            }
+            else if (_isMajor(mergeHash, projectFolder)) {
+                return { changeType: "major", info: "" };
+            }
+            else if (_isMinor(mergeHash, projectFolder)) {
+                return { changeType: "minor", info: "" };
+            }
+            else if (_isPatch(mergeHash, projectFolder)) {
+                return { changeType: "patch", info: "" };
+            }
+            else {
+                return { changeType: "none", info: "" };
+            }
+        }
+
+        const { changeType, info } = (_commitsCount == 0) ?
+            { changeType: "N/A", info: "there are no commits to parse." } :
+            _getChangeType(_mergeHash, _project.projectRelativeFolder);
+
+        printRecommendedChangeType(changeType, info);
+    }
+
+    if (_showCommitsParam !== undefined || _recommendChangetypeParam !== undefined) {
+
+        const targetBranch = _targetBranchParam || rushUtils.getRemoteDefaultBranch;
+        const mergeHash = utils.getmergeHash(targetBranch);
+
+        const changedProjects = await rushUtils.getChangedProjectsAsync(targetBranch);  //RushConfigurationProject
+        const changeFiles = getChangeFiles(targetBranch);                               //{'packageName':'<branchname>-<timestamp>.json','packageName':'<branchname>-<timestamp>.json' }
+        const stagedFiles = getStagedInfo(changedProjects);                             //{'packageName':count,'packageName':count }
 
         changedProjects.forEach(project => {
-            _exportLog(mergeHash, project.projectRelativeFolder, project.packageName, changeFiles[project.packageName], showCommitsParam, targetFolder)
+
+            const since = getDateFromChangeFile(changeFiles[project.packageName]);
+            const commitsCount = getCommitsCount(mergeHash, since, project.projectRelativeFolder)
+
+            printChangesSummary(project.projectRelativeFolder, commitsCount, stagedFiles[project.packageName]);
+            printChangeFileInfo(changeFiles[project.packageName]);
+
+            if (_recommendChangetypeParam !== undefined) {
+                recommendChangeType(mergeHash, project, commitsCount)
+            }
+            if (_showCommitsParam !== undefined) {
+                showCommits(_showCommitsParam, mergeHash, since, project, commitsCount, changeFiles[project.packageName]);
+            }
+
         });
     }
-    catch (ex) {
-        console.log(utils.Colors.Red + ex + utils.Colors.Reset)
-    }
 }
 
-async function RecommendChangeType(targetBranchParam) {
-
-    function _getRevListRegex(mergeCommitHash, regex, projectFolder) {
-        return [
-            'rev-list',
-            `${mergeCommitHash}...`,
-            '--count',
-            '--extended-regexp',
-            '--grep',
-            regex,
-            '--',
-            projectFolder
-        ];
-    }
-
-    function _isMajor(mergeCommitHash, projectFolder) {
-        const cctypes = require(path.join(node_modules, 'conventional-commit-types'));
-        const types = Object.keys(cctypes.types).join('|');
-        const result = utils.spawnCommandReturn('git', _getRevListRegex(mergeCommitHash, `(^(${types})(\(.*?\))?!:.*|^BREAKING CHANGE: )`, projectFolder))
-        return parseInt(result) > 0;
-    }
-    function _isMinor(mergeCommitHash, projectFolder) {
-        const result = utils.spawnCommandReturn('git', _getRevListRegex(mergeCommitHash, '^feat((.*?))?:', projectFolder))
-        return parseInt(result) > 0;
-    }
-    function _isPatch(mergeCommitHash, projectFolder) {
-        const result = utils.spawnCommandReturn('git', _getRevListRegex(mergeCommitHash, '^fix((.*?))?:', projectFolder))
-        return parseInt(result) > 0;
-    }
-
-    function _getChangeType(mergeHash, projectFolder) {
-        if (_isMajor(mergeHash, projectFolder)) {
-            return "major";
-        }
-        else if (_isMinor(mergeHash, projectFolder)) {
-            return "minor";
-        }
-        else if (_isPatch(mergeHash, projectFolder)) {
-            return "patch";
-        }
-        else {
-            return "none";
-        }
-    }
-
-    try {
-        const targetBranch = targetBranchParam || utils.getRemoteDefaultBranch();
-        const mergeHash = utils.executeCommandReturn(`git --no-optional-locks merge-base HEAD ${targetBranch}`);
-
-        const changedProjects = await utils.getChangedProjectsAsync(targetBranch);
-
-        if (changedProjects.size > 0) {
-            console.log(utils.Colors.Yellow + 'Based on conventional commits convention, we recommend the following change types: ' + utils.Colors.Reset);
-            changedProjects.forEach(project => {
-                console.log(`- ${project.packageName}: ` + utils.Colors.Green + _getChangeType(mergeHash, project.projectRelativeFolder) + utils.Colors.Reset);
-            });
-        }
-    }
-    catch (ex) {
-        console.log(utils.Colors.Red + ex + utils.Colors.Reset)
-    }
-}
-
-const showCommitsParam = utils.getArg("showCommits");
-const recommendChangeTypeParam = utils.getArg("recommendChangetype");
-const targetBranchParam = utils.getArg("targetBranch");
-
-if (showCommitsParam) {
-    ShowCommits(targetBranchParam, showCommitsParam);
-}
-
-if (recommendChangeTypeParam) {
-    RecommendChangeType(targetBranchParam);
-}
+rushChangeInfo(
+    utils.getArg("showCommits"),
+    utils.getArg("recommendChangetype"),
+    utils.getArg("targetBranch")
+)

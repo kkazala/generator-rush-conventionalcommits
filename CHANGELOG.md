@@ -2,8 +2,13 @@
 
 ## 1.4.0
 
-- `rush changefiles` command and `post-commit` git hook removed
-- `rush whatchanged` command detects existing change files and parses commits made after the last change file's creation date (based on the date in the file name)
+### Breaking changes
+
+- `rush changefiles` command and `post-commit` git hook **removed**
+
+### Features
+
+- `rush whatchanged` command added; it detects existing change files and parses commits made after the last change file's creation date (based on the date in the file name)
 
 ## 1.3.0
 

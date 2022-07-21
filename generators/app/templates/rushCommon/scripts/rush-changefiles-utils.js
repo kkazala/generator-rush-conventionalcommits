@@ -5,6 +5,40 @@ const node_modules = path.join(__dirname, '..', 'autoinstallers/rush-changemanag
 const rushLib = require(path.join(node_modules, '@microsoft/rush-lib'));
 const rushCore = require(path.join(node_modules, '@rushstack/node-core-library'));
 
+class RushUtil {
+
+    constructor() {
+        this.rushConfiguration = rushLib.RushConfiguration.loadFromDefaultLocation({ startingFolder: process.cwd() })
+    }
+    get getChangesFolder() {
+        return this.rushConfiguration.changesFolder;
+    }
+    get getTempFolder() {
+        return this.rushConfiguration.commonTempFolder;
+    }
+    get getHotfixChangeEnabled() {
+        return this.rushConfiguration.hotfixChangeEnabled;
+    }
+    get getRemoteDefaultBranch() {
+        return `${this.rushConfiguration.repositoryDefaultRemote}/${this.rushConfiguration.repositoryDefaultBranch}`;
+    }
+    get getDefaultRemote() {
+        return this.rushConfiguration.repositoryDefaultRemote;
+    }
+    async getChangedProjectsAsync(currentBranch) {
+        const projectAnalyzer = new rushLib.ProjectChangeAnalyzer(this.rushConfiguration);
+        const terminal = new rushCore.Terminal(new rushCore.ConsoleTerminalProvider({ verboseEnabled: false }));
+
+        const changedProjects = await projectAnalyzer.getChangedProjectsAsync({
+            targetBranchName: currentBranch,
+            terminal: terminal,
+            enableFiltering: false,
+            includeExternalDependencies: false
+        });
+        return changedProjects;
+    }
+}
+
 class Util {
 
     Colors = {
@@ -58,42 +92,10 @@ class Util {
             return undefined;
         }
     }
-    getChangesFolder() {
-        const rushConfiguration = rushLib.RushConfiguration.loadFromDefaultLocation({ startingFolder: process.cwd() });
-        return rushConfiguration.changesFolder;
+    getmergeHash(targetBranch) {
+        return this.executeCommandReturn(`git --no-optional-locks merge-base -- HEAD ${targetBranch}`);
     }
-    getTempFolder() {
-        return rushLib.RushConfiguration.loadFromDefaultLocation({ startingFolder: process.cwd() }).commonTempFolder;
-    }
-    getCurrentBranch() {
-        const rushConfiguration = rushLib.RushConfiguration.loadFromDefaultLocation({ startingFolder: process.cwd() });
-        const defaultRemote = rushConfiguration.repositoryDefaultRemote;
-        const currBranch = child_process.execSync("git branch --show-current").toString().trim();
-        try {
-            return child_process.execSync(`git rev-parse --symbolic-full-name --abbrev-ref "${currBranch}@{u}"`).toString().trim();
-        } catch (error) {
-            console.log(this.Colors.Red + "Error fetching git remote branch features/versions. Detected changed files may be incorrect." + this.Colors.Reset)
-            console.log(this.Colors.Yellow + `Execute 'git push --set-upstream ${defaultRemote} ${currBranch}' or 'git checkout --track ${defaultRemote}/${currBranch}' to set upstream branch` + this.Colors.Reset);
-            return null;
-        }
-    }
-    getRemoteDefaultBranch() {
-        const rushConfiguration = rushLib.RushConfiguration.loadFromDefaultLocation({ startingFolder: process.cwd() });
-        return rushConfiguration.repositoryDefaultRemote;
-    }
-    async getChangedProjectsAsync(currentBranch) {
-        const rushConfiguration = rushLib.RushConfiguration.loadFromDefaultLocation({ startingFolder: process.cwd() });
-        const projectAnalyzer = new rushLib.ProjectChangeAnalyzer(rushConfiguration);
-        const terminal = new rushCore.Terminal(new rushCore.ConsoleTerminalProvider({ verboseEnabled: false }));
 
-        const changedProjects = await projectAnalyzer.getChangedProjectsAsync({
-            targetBranchName: currentBranch,
-            terminal: terminal,
-            enableFiltering: false,
-            includeExternalDependencies: false
-        });
-        return changedProjects;
-    }
     _escapeShellParameter(parameter) {
         // This approach is based on what NPM 7 now does:
         // https://github.com/npm/run-script/blob/47a4d539fb07220e7215cc0e482683b76407ef9b/lib/run-script-pkg.js#L34
@@ -112,4 +114,6 @@ class Util {
         }
     }
 }
-module.exports = new Util();
+
+exports.utils = new Util();
+exports.rushUtils = new RushUtil();
