@@ -145,6 +145,10 @@ async function rushChangeInfo(_showCommitsParam, _recommendChangetypeParam, _tar
     const changeFiles = getChangeFiles(targetBranch);                               //{'packageName':'<branchname>-<timestamp>.json','packageName':'<branchname>-<timestamp>.json' }
     const stagedFiles = getStagedInfo(changedProjects);                             //{'packageName':count,'packageName':count }
 
+    if (changedProjects.size == 0) {
+        console.log('No changes were detected to relevant packages on this branch.Nothing to do.');
+        return;
+    }
     changedProjects.forEach(project => {
 
         const since = getDateFromChangeFile(changeFiles[project.packageName]);
