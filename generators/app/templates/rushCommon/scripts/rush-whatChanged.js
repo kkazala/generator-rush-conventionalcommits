@@ -132,7 +132,7 @@ async function rushChangeInfo(_showCommitsParam, _recommendChangetypeParam, _tar
         }
 
         const { changeType, info } = (_commitsCount == 0) ?
-            { changeType: "N/A", info: "there are no commits to parse." } :
+            { changeType: "N/A", info: "there are no commits to parse" } :
             _getChangeType(_mergeHash, _project.projectRelativeFolder);
 
         printRecommendedChangeType(changeType, info);
