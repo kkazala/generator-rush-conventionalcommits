@@ -138,32 +138,29 @@ async function rushChangeInfo(_showCommitsParam, _recommendChangetypeParam, _tar
         printRecommendedChangeType(changeType, info);
     }
 
-    if (_showCommitsParam !== undefined || _recommendChangetypeParam !== undefined) {
+    const targetBranch = _targetBranchParam || rushUtils.getRemoteDefaultBranch;
+    const mergeHash = utils.getmergeHash(targetBranch);
 
-        const targetBranch = _targetBranchParam || rushUtils.getRemoteDefaultBranch;
-        const mergeHash = utils.getmergeHash(targetBranch);
+    const changedProjects = await rushUtils.getChangedProjectsAsync(targetBranch);  //RushConfigurationProject
+    const changeFiles = getChangeFiles(targetBranch);                               //{'packageName':'<branchname>-<timestamp>.json','packageName':'<branchname>-<timestamp>.json' }
+    const stagedFiles = getStagedInfo(changedProjects);                             //{'packageName':count,'packageName':count }
 
-        const changedProjects = await rushUtils.getChangedProjectsAsync(targetBranch);  //RushConfigurationProject
-        const changeFiles = getChangeFiles(targetBranch);                               //{'packageName':'<branchname>-<timestamp>.json','packageName':'<branchname>-<timestamp>.json' }
-        const stagedFiles = getStagedInfo(changedProjects);                             //{'packageName':count,'packageName':count }
+    changedProjects.forEach(project => {
 
-        changedProjects.forEach(project => {
+        const since = getDateFromChangeFile(changeFiles[project.packageName]);
+        const commitsCount = getCommitsCount(mergeHash, since, project.projectRelativeFolder)
 
-            const since = getDateFromChangeFile(changeFiles[project.packageName]);
-            const commitsCount = getCommitsCount(mergeHash, since, project.projectRelativeFolder)
+        printChangesSummary(project.projectRelativeFolder, commitsCount, stagedFiles[project.packageName]);
+        printChangeFileInfo(changeFiles[project.packageName]);
 
-            printChangesSummary(project.projectRelativeFolder, commitsCount, stagedFiles[project.packageName]);
-            printChangeFileInfo(changeFiles[project.packageName]);
+        if (_recommendChangetypeParam !== undefined) {
+            recommendChangeType(mergeHash, project, commitsCount)
+        }
+        if (_showCommitsParam !== undefined) {
+            showCommits(_showCommitsParam, mergeHash, since, project, commitsCount, changeFiles[project.packageName]);
+        }
 
-            if (_recommendChangetypeParam !== undefined) {
-                recommendChangeType(mergeHash, project, commitsCount)
-            }
-            if (_showCommitsParam !== undefined) {
-                showCommits(_showCommitsParam, mergeHash, since, project, commitsCount, changeFiles[project.packageName]);
-            }
-
-        });
-    }
+    });
 }
 
 rushChangeInfo(
