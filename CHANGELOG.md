@@ -9,7 +9,7 @@
 
 ### Fixes
 
-- Removed warning "rush will NOT request change files for this project, because a change file already exists". This was incorrect; projects with existing change files are ignored only if `rush change -v` is invoked. `rush change` is correctly detecting these projects and asks users whether the new descrption should be appended to the existing file.
+- Removed warning "rush will NOT request change files for this project, because a change file already exists". This was incorrect; projects with existing change files are ignored only if `rush change -v` is invoked. `rush change` is correctly detecting these projects and asks users whether the new description should be appended to the existing file.
 
 ## 1.4.0
 

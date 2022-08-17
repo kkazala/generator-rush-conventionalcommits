@@ -1,6 +1,6 @@
 # generator-rush-conventionalcommits
 
-[![rush](https://img.shields.io/badge/rush-5.66.2-brightgreen)](https://rushjs.io/)
+[![rush](https://img.shields.io/badge/rush-^5.66.2-brightgreen)](https://rushjs.io/)
 [![yeoman generator](https://img.shields.io/badge/yeoman--generator-5.6.1-brightgreen)](https://yeoman.io/generators/)
 
 Adds **support** for change file generation based on [conventional commits](https://conventionalcommits.org/) convention to rush monorepos.
@@ -17,7 +17,7 @@ If you follow [Conventional Commits](https://www.conventionalcommits.org/en/v1.0
 `rush whatchanged` always displays number of commits and staged files for each project. It only analyzes commits made after the last commited change file.
 
 - when used with `--recommend-changetype` it suggests a change type for each changed project, based on your commits since the 'mergeBase' detected by rush.
-- when used with `--show-commits` it displays (`--show-commitsshortlog`) or saves to a file (`--show-commits full`) history of your commits made since the 'mergeBase'.
+- when used with `--show-commits` it displays (`--show-commits shortlog`) or saves to a file (`--show-commits full`) history of your commits made since the 'mergeBase'.
 
 >**Important**: This solution is using [ProjectChangeAnalyzer](https://api.rushstack.io/pages/rush-lib.projectchangeanalyzer/) class which is still in **BETA** and may change. It is NOT recommended to use this API in a production environment. <br/><br/>
 > When detecting existing change files, `rush` only retrieves a list of already commited change files. The `rush whatchanged` command is aligned with `rush` and also only retrieves a list of already committed change files. This influences the detected "last created date" of the change file, and the timestamp from which the commits are analyzed. `rush` does **NOT** automatically commit change files.
@@ -27,7 +27,7 @@ If you follow [Conventional Commits](https://www.conventionalcommits.org/en/v1.0
 ### rush whatchanged
 
 ```
-usage: rush whatchanged [-h] [-b BRANCH] [--recommend-changetype] [--show-commits]
+usage: rush whatchanged [-h] [-b BRANCH] [--recommend-changetype] [--show-commits {shortlog,full}]
 
 Provides support for creating change files.
 Optional arguments:
