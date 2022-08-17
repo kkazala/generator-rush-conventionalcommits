@@ -6,14 +6,11 @@ const node_modules = path.join(__dirname, '..', 'autoinstallers/rush-changemanag
 
 async function rushChangeInfo(_showCommitsParam, _recommendChangetypeParam, _targetBranchParam) {
 
-    function printChangesSummary(projectName, commitsCount, stagedChangesCount) {
-        console.log('\n' + utils.Colors.Yellow + `- ${projectName}:` + utils.Colors.Reset + ` commits: ${commitsCount}, staged files: ${stagedChangesCount}`)
+    function printChangesSummary(projectName, since, commitsCount, stagedChangesCount) {
+        const printSince = (since !== undefined) ? ` since ${since}` : ''
+        console.log('\n' + utils.Colors.Yellow + `- ${projectName}` + utils.Colors.Reset + `${printSince}: commits: ${commitsCount}, staged files: ${stagedChangesCount}`)
     }
-    function printChangeFileInfo(changeFileName) {
-        if (changeFileName !== undefined) {
-            console.log(`  rush will ` + utils.Colors.Yellow + `NOT` + utils.Colors.Reset + ` request change files for this project, because a change file already exists`)
-        }
-    }
+
     function printRecommendedChangeType(changeType, info) {
         const infoMsg = (info) ? ` (${info})` : '';
         console.log(`  recommended change type: ` + utils.Colors.Green + changeType + utils.Colors.Reset + infoMsg);
@@ -34,7 +31,11 @@ async function rushChangeInfo(_showCommitsParam, _recommendChangetypeParam, _tar
     }
     function getChangeFiles(targetBranch) {
         const changesFolder = rushUtils.getChangesFolder;
-        const changeFiles = utils.executeCommandReturn(`git diff ${targetBranch}... --name-only --no-renames --diff-filter=A -- "${changesFolder}"`).split('\n');
+        const currentBranchEncoded = utils.getChangeFileNamePrefix();
+        const pathFilter = `${changesFolder}\\*\\${currentBranchEncoded}_*`;
+        console.log(pathFilter)
+
+        const changeFiles = utils.executeCommandReturn(`git diff ${targetBranch}... --name-only --no-renames --diff-filter=A -- "${pathFilter}"`).split('\n');
 
         const result = changeFiles.reduce((acc, obj) => {
             const parsed = path.parse(path.relative(changesFolder, obj));
@@ -47,15 +48,21 @@ async function rushChangeInfo(_showCommitsParam, _recommendChangetypeParam, _tar
 
         return result;
     }
-    function getDateFromChangeFile(fileName) {
+    function getDateFromChangeFile(fileName, format) {
         if (fileName === undefined) {
             return '';
         }
-        //always _YYYY-MM-DD-HH-MM.json
+
+        //always branchName_YYYY-MM-DD-HH-MM.json OR branchName_YYYY-MM-DD-HH-MM-SS.json
         const res = fileName.match("_(?<dateTime>.*).json")
         const val = res.groups.dateTime.split('-');
 
-        return `--since=${val[0]}-${val[1]}-${val[2]}T${val[3]}:${val[4]}:00`;
+        if (format == 'git') {
+            return `--since=${val[0]}-${val[1]}-${val[2]}T${val[3]}:${val[4]}:${val[5] ?? '00'}`;
+        }
+        else {
+            return `${val[0]}-${val[1]}-${val[2]} ${val[3]}:${val[4]}:${val[5] ?? '00'}`;
+        }
     }
     function getCommitsCount(_mergeBaseHash, _since, _projectRelativeFolder) {
         return utils.executeCommandReturn(`git rev-list ${_mergeBaseHash}... --count ${_since} -- "${_projectRelativeFolder}"`);
@@ -146,16 +153,16 @@ async function rushChangeInfo(_showCommitsParam, _recommendChangetypeParam, _tar
     const stagedFiles = getStagedInfo(changedProjects);                             //{'packageName':count,'packageName':count }
 
     if (changedProjects.size == 0) {
-        console.log('No changes were detected to relevant packages on this branch.Nothing to do.');
+        console.log('No changes were detected to relevant packages on this branch. Nothing to do.');
         return;
     }
     changedProjects.forEach(project => {
 
-        const since = getDateFromChangeFile(changeFiles[project.packageName]);
+        const since = getDateFromChangeFile(changeFiles[project.packageName], 'git');
+        const sinceInfo = getDateFromChangeFile(changeFiles[project.packageName]);
         const commitsCount = getCommitsCount(mergeHash, since, project.projectRelativeFolder)
 
-        printChangesSummary(project.projectRelativeFolder, commitsCount, stagedFiles[project.packageName]);
-        printChangeFileInfo(changeFiles[project.packageName]);
+        printChangesSummary(project.projectRelativeFolder, sinceInfo, commitsCount, stagedFiles[project.packageName]);
 
         if (_recommendChangetypeParam !== undefined) {
             recommendChangeType(mergeHash, project, commitsCount)

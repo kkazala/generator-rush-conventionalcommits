@@ -12,13 +12,25 @@ class Util {
         var commentEval = new RegExp(/\/\*[\s\S]*?\*\/|([^:]|^)\/\/.*$/gm);
         return data.replace(commentEval, '');
     }
-    _assertRushVersion(filePath) {
+    _getRushVersion(filePath) {
         const rushJson = JSON.parse(
             this._stripJSONComments(
                 fs.readFileSync(filePath, 'utf-8')
             ));
-        return (compareVersions(rushJson.rushVersion, this.rushVersionRequired) >= 0);
+        return rushJson.rushVersion;
     }
+
+    _assertRushVersion(rushVersion) {
+
+        return (compareVersions(rushVersion, this.rushVersionRequired) >= 0);
+    }
+    // _assertRushVersion(filePath) {
+    //     const rushJson = JSON.parse(
+    //         this._stripJSONComments(
+    //             fs.readFileSync(filePath, 'utf-8')
+    //         ));
+    //     return (compareVersions(rushJson.rushVersion, this.rushVersionRequired) >= 0);
+    // }
 
     _mergeJsonFiles(sourceFile, targetFile, mergingLogic) {
 

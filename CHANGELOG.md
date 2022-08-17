@@ -1,5 +1,16 @@
 # Change Log - generator-rush-conventionalcommits
 
+## 1.4.1
+
+### Features
+
+- `rush whatchanged` command: analyzes the change files created for the current branch. This functionality is aligned with how `rush change` detects change files
+- the references to `rush` libraries in autoinstaller's package.json is now set to rush version retrieved from `rush.json`. Note: the package version is [defined](https://nodejs.dev/en/learn/semantic-versioning-using-npm) as `^x.y.z`, allowing updates of minor or major versions
+
+### Fixes
+
+- Removed warning "rush will NOT request change files for this project, because a change file already exists". This was incorrect; projects with existing change files are ignored only if `rush change -v` is invoked. `rush change` is correctly detecting these projects and asks users whether the new descrption should be appended to the existing file.
+
 ## 1.4.0
 
 ### Breaking changes

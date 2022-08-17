@@ -95,13 +95,33 @@ class Util {
     getmergeHash(targetBranch) {
         return this.executeCommandReturn(`git --no-optional-locks merge-base -- HEAD ${targetBranch}`);
     }
+    getChangeFileNamePrefix() {
+        const currentBranch = child_process.execSync("git branch --show-current").toString().trim();
+        return this.escapeFilename(currentBranch);
+    }
+
+    getCurrentBranch(defaultRemote) {
+        // const defaultRemote = rushConfiguration.repositoryDefaultRemote;
+        const currBranch = child_process.execSync("git branch --show-current").toString().trim();
+        try {
+            return child_process.execSync(`git rev-parse --symbolic-full-name --abbrev-ref "${currBranch}@{u}"`).toString().trim();
+        } catch (error) {
+            console.log(this.Colors.Red + "Error fetching git remote branch features/versions. Detected changed files may be incorrect." + this.Colors.Reset)
+            console.log(this.Colors.Yellow + `Execute 'git push --set-upstream ${defaultRemote} ${currBranch}' or 'git checkout --track ${defaultRemote}/${currBranch}' to set upstream branch` + this.Colors.Reset);
+            return null;
+        }
+    }
+    escapeFilename(filename, replacer) {
+        // Removes / ? < > \ : * | ", really anything that isn't a letter, number, '.' '_' or '-'
+        const badCharacters = /[^a-zA-Z0-9._-]/g;
+        return filename.replace(badCharacters, replacer ?? '-');
+    }
 
     _escapeShellParameter(parameter) {
         // This approach is based on what NPM 7 now does:
         // https://github.com/npm/run-script/blob/47a4d539fb07220e7215cc0e482683b76407ef9b/lib/run-script-pkg.js#L34
         return JSON.stringify(parameter);
     }
-
     _processResult(result) {
         //rushstack\libraries\rush-lib\src\utilities\Utilities.ts
         if (result.error) {

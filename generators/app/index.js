@@ -12,11 +12,13 @@ module.exports = class extends Generator {
         this.log(chalk.green("rush-conventionalcommits " + this.rootGeneratorVersion()))
 
         const rushJson = `${this.contextRoot}/rush.json`
+        this.rushVer = utils._getRushVersion(rushJson);
+
         if (!this.fs.exists(rushJson)) {
             this.log(chalk.red('This generator needs to be invoked from rush root directory'));
             process.exit(1)
         }
-        if (!utils._assertRushVersion(rushJson)) {
+        if (!utils._assertRushVersion(this.rushVer)) {
             this.log(chalk.red(`This generator requires rush version ${utils.rushVersionRequired} or newer. Please either upgrade rush, or use older version of the generator.`));
             process.exit(1)
         }
@@ -38,10 +40,9 @@ module.exports = class extends Generator {
 
     install() {
         this.log(chalk.green("Updating auto-installers"));
-
-        this._executeCommand('rush update-autoinstaller --name rush-commitlint');
-        this._executeCommand('rush update-autoinstaller --name rush-changemanager');
-        this._executeCommand('rush update');
+        let result = this.spawnCommandSync('rush', ['update-autoinstaller', '--name', 'rush-commitlint']);
+        result = this.spawnCommandSync('rush', ['update-autoinstaller', '--name', 'rush-changemanager']);
+        result = this.spawnCommandSync('rush', ['update']);
     }
 
     end() {
@@ -63,10 +64,16 @@ module.exports = class extends Generator {
         );
 
         this.log(chalk.green("Copying rush autoinstallers"));
-        this.fs.copy(
-            `${this.sourceRoot()}/rushCommon/autoinstallers/.`,
-            `${this.contextRoot}/common/autoinstallers/.`
+        this.fs.copyTpl(
+            this.templatePath(`${this.sourceRoot()}/rushCommon/templates/.`),
+            this.destinationPath(`${this.contextRoot}/common/autoinstallers/.`),
+            { rushVer: this.rushVer }
         );
+
+        // this.fs.copy(
+        //     `${this.sourceRoot()}/rushCommon/autoinstallers/.`,
+        //     `${this.contextRoot}/common/autoinstallers/.`
+        // );
 
         this.log(chalk.green("Copying rush githooks"));
         this.fs.copy(
