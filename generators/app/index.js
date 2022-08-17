@@ -97,11 +97,4 @@ module.exports = class extends Generator {
         );
     }
 
-    _executeCommand(command) {
-        return child_process.execSync(command, { stdio: 'inherit' });
-    }
-    _executeCommandAsync(command) {
-        return child_process.exec(command, { stdio: 'inherit' });
-    }
-
 };
