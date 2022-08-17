@@ -1,9 +1,11 @@
-# generator-rush-conventionalcommits
+# yo rush-conventionalcommits
 
 [![rush](https://img.shields.io/badge/rush-^5.66.2-brightgreen)](https://rushjs.io/)
 [![yeoman generator](https://img.shields.io/badge/yeoman--generator-5.6.1-brightgreen)](https://yeoman.io/generators/)
 
-Adds **support** for change file generation based on [conventional commits](https://conventionalcommits.org/) convention to rush monorepos.
+> When publishing an NPM package, it is common practice to include a CHANGELOG.md file to inform your consumers about bug fixes, new features, and changed or removed functionality. Rush automates this using the rush change command. This command should be run once you are ready to merge your PR, after all your changes have been committed to the branch. It analyzes the changes in your branch and (when necessary) prompts you to write human-readable descriptions of your changes. [Authoring change logs](https://rushjs.io/pages/best_practices/change_logs/)
+
+This generator adds **support** for change file generation based on [conventional commits](https://conventionalcommits.org/) convention.
 
 ![Example command results](assets/commandresults.png)
 
