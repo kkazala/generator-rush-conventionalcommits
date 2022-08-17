@@ -13,14 +13,14 @@ The difference between commit messages and rush's change files is explained by [
 
 If you follow [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/), your commits already contain information necessary for calculating the change type.
 `rush change` detects changed projects based on your staged files and commits.
-> At the time of this writing, any changed (staging, commits)  done after a change file is created, you will  NOT be asked to create another change file.
 
-`rush whatchanged` always displays number of commits and staged files for each project.
+`rush whatchanged` always displays number of commits and staged files for each project. It only analyzes commits made after the last commited change file.
 
 - when used with `--recommend-changetype` it suggests a change type for each changed project, based on your commits since the 'mergeBase' detected by rush.
 - when used with `--show-commits` it displays (`--show-commitsshortlog`) or saves to a file (`--show-commits full`) history of your commits made since the 'mergeBase'.
 
->**Important**: This solution is using [ProjectChangeAnalyzer](https://api.rushstack.io/pages/rush-lib.projectchangeanalyzer/) class which is still in BETA and may change. It is NOT recommended to use this API in a production environment.
+>**Important**: This solution is using [ProjectChangeAnalyzer](https://api.rushstack.io/pages/rush-lib.projectchangeanalyzer/) class which is still in **BETA** and may change. It is NOT recommended to use this API in a production environment. <br/><br/>
+> When detecting existing change files, `rush` only retrieves a list of already commited change files. The `rush whatchanged` command is aligned with `rush` and also only retrieves a list of already committed change files. This influences the detected "last created date" of the change file, and the timestamp from which the commits are analyzed. `rush` does **NOT** automatically commit change files.
 
 ## Commands
 
