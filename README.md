@@ -10,8 +10,9 @@ This generator adds **support** for change file generation based on [conventiona
 ![Example command results](assets/commandresults.png)
 
 The difference between commit messages and rush's change files is explained by [Pete Gonzalez](https://github.com/octogonz):
->**Git commits document steps of work.** For example, when I create a PR, I might break it into 5 separate commits that are easier to review one by one, rather than reading the entire PR diff. And then during the code review, people may suggest various improvements, which may lead to 10 more commits before I finally merge my PR. Some of these commits will be pure bookkeeping (`ran "rush update"`, `merged from master`, etc). Git commits are written for the audience of people who work on the code. Whereas...<br/>
-**Change logs inform consumers what's new.** Consumers need to know which bugs got fixed, which new features were added, or alert consumers about possible breaking changes. This audience often doesn't know anything about the underlying implementation, so a different style of writing is needed. In a monorepo, one Git commit might impact many different projects, and perhaps in a way that needs to be explained differently for each project. For certain important projects, the change log may serve as a public announcement to customers. The release team may have a step where they manually revise the changelog before publishing a release.
+>**Git commits document steps of work.** For example, when I create a PR, I might break it into 5 separate commits that are easier to review one by one, rather than reading the entire PR diff. And then during the code review, people may suggest various improvements, which may lead to 10 more commits before I finally merge my PR. Some of these commits will be pure bookkeeping (`ran "rush update"`, `merged from master`, etc). Git commits are written for the audience of people who work on the code. Whereas...
+>
+>**Change logs inform consumers what's new.** Consumers need to know which bugs got fixed, which new features were added, or alert consumers about possible breaking changes. This audience often doesn't know anything about the underlying implementation, so a different style of writing is needed. In a monorepo, one Git commit might impact many different projects, and perhaps in a way that needs to be explained differently for each project. For certain important projects, the change log may serve as a public announcement to customers. The release team may have a step where they manually revise the changelog before publishing a release.
 
 If you follow [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/), your commits already contain information necessary for calculating the change type.
 `rush change` detects changed projects based on your staged files and commits.
@@ -21,7 +22,8 @@ If you follow [Conventional Commits](https://www.conventionalcommits.org/en/v1.0
 - when used with `--recommend-changetype` it suggests a change type for each changed project, based on your commits since the 'mergeBase' detected by rush.
 - when used with `--show-commits` it displays (`--show-commits shortlog`) or saves to a file (`--show-commits full`) history of your commits made since the 'mergeBase'.
 
->**Important**: This solution is using [ProjectChangeAnalyzer](https://api.rushstack.io/pages/rush-lib.projectchangeanalyzer/) class which is still in **BETA** and may change. It is NOT recommended to use this API in a production environment. <br/><br/>
+>**Important**: This solution is using [ProjectChangeAnalyzer](https://api.rushstack.io/pages/rush-lib.projectchangeanalyzer/) class which is still in **BETA** and may change. It is NOT recommended to use this API in a production environment.
+>
 > When detecting existing change files, `rush` only retrieves a list of already commited change files. The `rush whatchanged` command is aligned with `rush` and also only retrieves a list of already committed change files. This influences the detected "last created date" of the change file, and the timestamp from which the commits are analyzed. `rush` does **NOT** automatically commit change files.
 
 ## Commands

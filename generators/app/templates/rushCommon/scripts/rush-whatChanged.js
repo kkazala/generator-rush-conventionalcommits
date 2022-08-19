@@ -1,6 +1,6 @@
 ﻿const fs = require("fs");
 const path = require('path');
-const { utils, rushUtils } = require('./rush-changefiles-utils.js');
+const { utils, rushUtils } = require('./rush-whatChanged-utils.js');
 const node_modules = path.join(__dirname, '..', 'autoinstallers/rush-changemanager/node_modules');
 
 

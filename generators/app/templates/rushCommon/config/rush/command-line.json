@@ -58,10 +58,10 @@
     },
     {
       "parameterKind": "string",
-      "argumentName": "TARGET_BRANCH",
+      "argumentName": "BRANCH",
       "longName": "--target-branch",
       "shortName": "-b",
-      "description": "",
+      "description": " If this flag is specified, changes will be committed and merged into the target branch.",
       "associatedCommands": [
         "whatchanged"
       ]

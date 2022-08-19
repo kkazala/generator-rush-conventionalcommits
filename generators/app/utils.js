@@ -21,7 +21,6 @@ class Util {
     }
 
     _assertRushVersion(rushVersion) {
-
         return (compareVersions(rushVersion, this.rushVersionRequired) >= 0);
     }
 
