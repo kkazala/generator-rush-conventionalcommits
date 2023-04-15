@@ -8,9 +8,9 @@ class Util {
     }
 
     _stripJSONComments(data) {
-        var re = new RegExp("\/\/(.*)", "g");
         var commentEval = new RegExp(/\/\*[\s\S]*?\*\/|([^:]|^)\/\/.*$/gm);
-        return data.replace(commentEval, '');
+        var commaEval = new RegExp(/,([\s\n]+[}\]])/gm);
+        return data.replace(commentEval, '').replace(commaEval, '$1');
     }
     _getRushVersion(filePath) {
         const rushJson = JSON.parse(
